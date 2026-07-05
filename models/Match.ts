@@ -88,10 +88,40 @@ const MatchSchema=new mongoose.Schema({
         default:0
     },
 
+    overs: {
+        type:Number,
+        required:true
+    },
+
     likes: {
     type: Number,
     default: 0
-    }
+    },
+
+    winner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Team"
+    },
+
+    dateTime:{
+        type:Date,
+    },
+
+    venue:{
+        type:String
+    },
+
+    battingTeam: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Team",
+        required: true
+    },
+
+    bowlingTeam: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Team",
+        required: true
+    },
 },
 
 {

@@ -53,6 +53,21 @@ const BallEventSchema=new mongoose.Schema({
       ref: "Player",
     },
 
+    newBatsman: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Player",
+    },
+
+    newBowler: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Player"
+    },
+
+    extraRuns: {
+      type: Number,
+      default:0
+    }
+
   },
 
   {
