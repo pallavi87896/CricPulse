@@ -2,16 +2,71 @@ import Match from "@/models/Match";
 import { connectDB } from "@/lib/mongodb";
 import Team from "@/models/Team";
 import Player from "@/models/Player";
+import mongoose from "mongoose";
+import { Console, error } from "console";
 
-export async function POST(req:Request){
-    try{
+export async function POST(req: Request) {
+    try {
         await connectDB();
 
-        const { teamA, teamB, tossWinner, tossDecision, status, dateTime, venue, overs, currStriker, currNonStriker, currBowler } = await req.json();
-        
-        const existingTeamA=await Team.findById(teamA);
+        const {
+            teamA,
+            teamB,
+            tossWinner,
+            tossDecision,
+            status,
+            dateTime,
+            venue,
+            overs,
+            currStriker,
+            currNonStriker,
+            currBowler,
+        } = await req.json();
 
-        const existingTeamB=await Team.findById(teamB);
+        const ids = [
+            teamA,
+            teamB,
+            tossWinner,
+            currStriker,
+            currNonStriker,
+            currBowler,
+        ];
+
+        for (const id of ids) {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return Response.json(
+                    { msg: "Invalid ID provided" },
+                    { status: 400 }
+                );
+            }
+        }
+
+        if (String(teamA) === String(teamB)) {
+            return Response.json(
+                { msg: "A team cannot play against itself" },
+                { status: 400 }
+            );
+        }
+
+        if (
+            String(tossWinner) !== String(teamA) &&
+            String(tossWinner) !== String(teamB)
+        ) {
+            return Response.json(
+                { msg: "Invalid toss winner" },
+                { status: 400 }
+            );
+        }
+
+        const existingTeamA = await Team.findById(teamA);
+        const existingTeamB = await Team.findById(teamB);
+
+        if (!existingTeamA || !existingTeamB) {
+            return Response.json(
+                { msg: "Team not found" },
+                { status: 404 }
+            );
+        }
 
         const striker = await Player.findById(currStriker);
         const nonStriker = await Player.findById(currNonStriker);
@@ -19,122 +74,108 @@ export async function POST(req:Request){
 
         if (!striker || !nonStriker || !bowler) {
             return Response.json(
-                {
-                    msg: "Invalid player selected"
-                },
-                {
-                    status: 404
-                }
+                { msg: "Invalid player selected" },
+                { status: 404 }
             );
         }
 
-        if ((existingTeamA && existingTeamB) && (teamA!==teamB)){
-
-            let battingTeam;
-            let bowlingTeam;
-
-            if( tossDecision === "Bat" ){
-                battingTeam = tossWinner;
-
-                if(String(tossWinner) ===  String(teamA)){
-                    bowlingTeam = teamB;
-                }
-                else
-                {
-                    bowlingTeam = teamA;
-                }
-            }
-            else{
-                bowlingTeam = tossWinner;
-
-                if( String(tossWinner) === String(teamA)){
-                    battingTeam = teamB;
-                }
-                else
-                {
-                    battingTeam = teamA;
-                }
-            }
-            
-            const match = await Match.create(
-                {
-                    teamA,
-                    teamB,
-                    tossWinner,
-                    tossDecision,
-                    innings: 1,
-
-                    battingTeam,
-                    bowlingTeam,
-
-                    currStriker,
-                    currNonStriker,
-                    currBowler,
-
-                    status,
-                    dateTime,
-                    venue,
-
-                    overs
-                }
-            )
-
-            return Response.json(match);
+        if (String(currStriker) === String(currNonStriker)) {
+            return Response.json(
+                { msg: "Striker and non-striker cannot be the same player" },
+                { status: 400 }
+            );
         }
-        else
-            {
-            return Response.json
-              (
+
+        let battingTeam;
+        let bowlingTeam;
+
+        if (tossDecision === "Bat") {
+            battingTeam = tossWinner;
+            bowlingTeam =
+                String(tossWinner) === String(teamA) ? teamB : teamA;
+        } else {
+            bowlingTeam = tossWinner;
+            battingTeam =
+                String(tossWinner) === String(teamA) ? teamB : teamA;
+        }
+
+        if (
+            String(striker.team) !== String(battingTeam) ||
+            String(nonStriker.team) !== String(battingTeam)
+        ) {
+            return Response.json(
                 {
-                    msg:"Team not found"
+                    msg: "Striker and non-striker must belong to the batting team",
                 },
+                { status: 400 }
+            );
+        }
+
+        if (String(bowler.team) !== String(bowlingTeam)) {
+            return Response.json(
                 {
-                    status:404
-                }
-              )
-            }
-        
-    } 
-    catch(err)
-    {
+                    msg: "Bowler must belong to the bowling team",
+                },
+                { status: 400 }
+            );
+        }
+
+        const match = await Match.create({
+            teamA,
+            teamB,
+            tossWinner,
+            tossDecision,
+            innings: 1,
+            battingTeam,
+            bowlingTeam,
+            currStriker,
+            currNonStriker,
+            currBowler,
+            status,
+            dateTime,
+            venue,
+            overs,
+        });
+
+        return Response.json(match, { status: 201 });
+    } catch (err) {
         return Response.json(
             {
-                msg:"failed to start a match"
+                msg: "Failed to start match",
             },
             {
-                status:500
+                status: 500,
             }
-        )
+        );
     }
 }
 
-export async function GET(){
-    
-    try
-    {
+export async function GET() {
+    try {
         await connectDB();
 
-        const match=await Match.find().populate("teamA").populate("teamB");
+        const matches = await Match.find()
+            .populate("teamA")
+            .populate("teamB")
+            .populate("currStriker")
+            .populate("currNonStriker")
+            .populate("currBowler");
 
-        return Response.json(match);
-
-    }
-    catch(err)
-    {
+        return Response.json(matches);
+    } catch (err) {
         return Response.json(
             {
-                msg:"failed to start a match"
+                msg: "Failed to fetch matches",
             },
             {
-                status:500
+                status: 500,
             }
-        )
+        );
     }
 }
 
 export async function PATCH(req: Request) {
     try {
-        
         await connectDB();
 
         const {
@@ -146,16 +187,31 @@ export async function PATCH(req: Request) {
             status,
             dateTime,
             venue,
-            action
+            action,
         } = await req.json();
 
-        if(action==="like"){
-            const match= await Match.findById(id);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return Response.json(
+                {
+                    msg: "Invalid match ID",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+        console.log(action);
+        if (action === "like") {
+            const match = await Match.findById(id);
 
             if (!match) {
                 return Response.json(
-                    { msg: "Match not found" },
-                    { status: 404 }
+                    {
+                        msg: "Match not found",
+                    },
+                    {
+                        status: 404,
+                    }
                 );
             }
 
@@ -164,7 +220,7 @@ export async function PATCH(req: Request) {
 
             return Response.json(match);
         }
-        
+
         const updatedMatch = await Match.findByIdAndUpdate(
             id,
             {
@@ -193,11 +249,12 @@ export async function PATCH(req: Request) {
         }
 
         return Response.json(updatedMatch);
-
     } catch (err) {
+        
+        console.error(err);
         return Response.json(
             {
-                msg: "Failed to update match",
+                error:String(error),
             },
             {
                 status: 500,
@@ -205,32 +262,48 @@ export async function PATCH(req: Request) {
         );
     }
 }
-export async function DELETE(req:Request){
-    
-    try
-    {
+
+export async function DELETE(req: Request) {
+    try {
         await connectDB();
 
         const { id } = await req.json();
 
-        await Match.findByIdAndDelete(id);
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return Response.json(
+                {
+                    msg: "Invalid match ID",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
 
+        const deletedMatch = await Match.findByIdAndDelete(id);
+
+        if (!deletedMatch) {
+            return Response.json(
+                {
+                    msg: "Match not found",
+                },
+                {
+                    status: 404,
+                }
+            );
+        }
+
+        return Response.json({
+            msg: "Match deleted successfully",
+        });
+    } catch (err) {
         return Response.json(
             {
-                msg:"match deleted successfully"
-            }
-        )
-    }
-    catch(err)
-    {
-        return Response.json(
-            {
-                msg:"failed to delete match"
+                msg: "Failed to delete match",
             },
             {
-                status:500
+                status: 500,
             }
-        )
+        );
     }
 }
-

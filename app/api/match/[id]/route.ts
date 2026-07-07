@@ -1,10 +1,18 @@
 import Match from "@/models/Match";
 import { connectDB } from "@/lib/mongodb";
+import mongoose from "mongoose";
 
 export async function GET(req:Request, { params }: { params: Promise<{ id: string }>}) 
 {
     try{
     const { id } = await params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+                    return Response.json(
+                        { msg: "Invalid ID provided" },
+                        { status: 400 }
+                    );
+    }
 
     await connectDB();
 
@@ -22,7 +30,7 @@ export async function GET(req:Request, { params }: { params: Promise<{ id: strin
     if(!match){
         return Response.json(
             {
-                msg:"invalid match"
+                msg:"match not found"
             },
             {
                 status:404

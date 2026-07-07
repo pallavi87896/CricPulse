@@ -1,12 +1,34 @@
-import Comment from "@/models/Comment";
+import CommentModel from "@/models/CommentModel";
 import Match from "@/models/Match";
 import { connectDB } from "@/lib/mongodb";
+import mongoose from "mongoose";
 
 export async function POST(req: Request) {
     try {
         await connectDB();
 
         const { match, username, comment } = await req.json();
+
+        if (!mongoose.Types.ObjectId.isValid(match)) {
+                    return Response.json(
+                        {
+                            msg: "Invalid team ID",
+                        },
+                        {
+                            status: 400,
+                        }
+                    );
+        }
+        
+        if(!username || !match  || !comment)
+        {
+            return Response.json({
+                msg:"one of the fields is missing"
+            },
+        {
+            status:400
+        })
+        }
 
         const existingMatch = await Match.findById(match);
 
@@ -21,7 +43,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const comments = await Comment.create({
+        const comments = await CommentModel.create({
             match,
             username,
             comment,
@@ -49,7 +71,19 @@ export async function GET(req: Request) {
 
         const match = searchParams.get("match");
 
-        const comments = await Comment.find({ match });
+        if(!match){
+            return Response.json
+            (
+            {
+                msg:"match not found"
+            },
+            {
+                status:400
+            }
+            );
+        }
+
+        const comments = await CommentModel.find({ match });
 
         return Response.json(comments);
 
@@ -71,7 +105,18 @@ export async function DELETE(req: Request) {
 
         const { id } = await req.json();
 
-        const deletedComment = await Comment.findByIdAndDelete(id);
+                if (!mongoose.Types.ObjectId.isValid(id)) {
+                    return Response.json(
+                        {
+                            msg: "Invalid team ID",
+                        },
+                        {
+                            status: 400,
+                        }
+                    );
+                }
+
+        const deletedComment = await CommentModel.findByIdAndDelete(id);
 
         if (!deletedComment) {
             return Response.json(
