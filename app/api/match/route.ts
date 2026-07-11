@@ -1,7 +1,6 @@
 import Match from "@/models/Match";
 import { connectDB } from "@/lib/mongodb";
 import Team from "@/models/Team";
-import Player from "@/models/Player";
 import mongoose from "mongoose";
 import { Console, error } from "console";
 
@@ -17,19 +16,14 @@ export async function POST(req: Request) {
             status,
             dateTime,
             venue,
-            overs,
-            currStriker,
-            currNonStriker,
-            currBowler,
+            overs
         } = await req.json();
 
         const ids = [
             teamA,
             teamB,
             tossWinner,
-            currStriker,
-            currNonStriker,
-            currBowler,
+            
         ];
 
         for (const id of ids) {
@@ -68,23 +62,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const striker = await Player.findById(currStriker);
-        const nonStriker = await Player.findById(currNonStriker);
-        const bowler = await Player.findById(currBowler);
-
-        if (!striker || !nonStriker || !bowler) {
-            return Response.json(
-                { msg: "Invalid player selected" },
-                { status: 404 }
-            );
-        }
-
-        if (String(currStriker) === String(currNonStriker)) {
-            return Response.json(
-                { msg: "Striker and non-striker cannot be the same player" },
-                { status: 400 }
-            );
-        }
+        
 
         let battingTeam;
         let bowlingTeam;
@@ -99,70 +77,71 @@ export async function POST(req: Request) {
                 String(tossWinner) === String(teamA) ? teamB : teamA;
         }
 
-        if (
-            String(striker.team) !== String(battingTeam) ||
-            String(nonStriker.team) !== String(battingTeam)
-        ) {
-            return Response.json(
-                {
-                    msg: "Striker and non-striker must belong to the batting team",
-                },
-                { status: 400 }
-            );
-        }
 
-        if (String(bowler.team) !== String(bowlingTeam)) {
-            return Response.json(
-                {
-                    msg: "Bowler must belong to the bowling team",
-                },
-                { status: 400 }
-            );
-        }
 
-        const match = await Match.create({
-            teamA,
-            teamB,
-            tossWinner,
-            tossDecision,
-            innings: 1,
-            battingTeam,
-            bowlingTeam,
-            currStriker,
-            currNonStriker,
-            currBowler,
-            status,
-            dateTime,
-            venue,
-            overs,
-        });
+        const match = new Match({
+    teamA,
+    teamB,
+    tossWinner,
+    tossDecision,
+    innings: 1,
+    battingTeam,
+    bowlingTeam,
+    status,
+    dateTime,
+    venue,
+    overs,
+});
+
+console.log(match);
+
+await match.validate();      // 👈 ADD THIS
+
+await match.save();
 
         return Response.json(match, { status: 201 });
     } catch (err) {
+
+    console.error(err);
+
+    if (err instanceof mongoose.Error.ValidationError) {
         return Response.json(
             {
-                msg: "Failed to start match",
+                validation: err.errors,
             },
             {
                 status: 500,
             }
         );
     }
+
+    return Response.json(
+        {
+            error: String(err),
+        },
+        {
+            status: 500,
+        }
+    );
+}
 }
 
 export async function GET() {
+    console.log("GET /api/match called");
     try {
         await connectDB();
-
+        console.log("mongo connecte");
         const matches = await Match.find()
-            .populate("teamA")
-            .populate("teamB")
-            .populate("currStriker")
-            .populate("currNonStriker")
-            .populate("currBowler");
-
+        .populate("teamA")
+        .populate("teamB")
+        .populate("tossWinner")
+        .populate("battingTeam")
+        .populate("bowlingTeam")
+        .populate("winner")
+        console.log(matches);
         return Response.json(matches);
     } catch (err) {
+        console.error("GET /api/match failed:", err);
         return Response.json(
             {
                 msg: "Failed to fetch matches",
@@ -188,6 +167,7 @@ export async function PATCH(req: Request) {
             dateTime,
             venue,
             action,
+            overs,
         } = await req.json();
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -231,6 +211,7 @@ export async function PATCH(req: Request) {
                 status,
                 dateTime,
                 venue,
+                overs
             },
             {
                 new: true,

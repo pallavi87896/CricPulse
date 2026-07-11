@@ -68,19 +68,19 @@ const MatchSchema=new mongoose.Schema({
     currNonStriker:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Player",
-        required:true
+        default:null
     },
 
     currStriker:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Player",
-        required:true
+        default:null
     },
 
     currBowler:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Player",
-        required:true
+        default:null
     },
 
     target:{

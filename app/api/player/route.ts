@@ -16,6 +16,7 @@ export async function POST(req:Request)
             team
 
         });
+        await player.populate("team","name logo");
         
         return Response.json(player);
 
@@ -41,7 +42,7 @@ export async function GET()
     {
         await connectDB();
 
-        const players=await Player.find().populate("team");
+        const players=await Player.find().populate("team","name logo");
 
         return Response.json(players);
     }
@@ -72,7 +73,7 @@ export async function PATCH(req:Request)
             id,
             { name,role,team },
             { new:true }
-        )
+        ).populate("team","name logo")
 
         return Response.json(updatedPlayer);
     }

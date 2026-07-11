@@ -3,11 +3,12 @@ import { connectDB } from "@/lib/mongodb";
 import PlayerStats from "@/models/PlayerStats";
 import mongoose from "mongoose";
 
-export async function GET(req:Request, { params }: { params: Promise<{ id: string }>} )
+export async function GET(req:Request)
 {
     try
     {
-        const { id } = await params;
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id") || "";
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
                         return Response.json(

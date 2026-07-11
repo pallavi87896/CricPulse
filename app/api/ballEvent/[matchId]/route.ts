@@ -1,11 +1,12 @@
 import BallEvent from "@/models/BallEvent";
 import { connectDB } from "@/lib/mongodb";
 
-export async function GET(req:Request, { params } : { params : Promise <{ id : string }> }) {
+export async function GET(req:Request, { params } : { params : Promise <{ matchId : string }> }) {
 
     try
     {
-        const { id } = await params;
+        const { matchId } = await params;
+        const id = matchId;
 
         await connectDB();
 

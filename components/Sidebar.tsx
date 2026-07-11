@@ -1,0 +1,128 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: (val: boolean) => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+  const pathname = usePathname();
+
+  const navigation = [
+    {
+      name: "Dashboard",
+      href: "/",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+        </svg>
+      ),
+    },
+    {
+      name: "Teams",
+      href: "/teams",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+        </svg>
+      ),
+    },
+    {
+      name: "Players",
+      href: "/players",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: "Matches",
+      href: "/matches",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
+      name: "Live Match",
+      href: "/live-match",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      {/* Mobile Sidebar overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-xs lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Panel */}
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-white border-r border-zinc-200 transition-transform lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } flex flex-col`}
+      >
+        {/* Brand Header */}
+        <div className="h-16 px-6 border-b border-zinc-200 flex items-center gap-2.5">
+          <div className="bg-blue-600 text-white p-1.5 rounded-md">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <span className="font-bold text-zinc-900 text-base leading-none block">CricPulse</span>
+            <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">Score Admin</span>
+          </div>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-md transition-colors ${
+                  isActive
+                    ? "bg-zinc-100 text-blue-600"
+                    : "text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
+                }`}
+              >
+                <span className={isActive ? "text-blue-600" : "text-zinc-400"}>
+                  {item.icon}
+                </span>
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Footer info */}
+        <div className="p-4 border-t border-zinc-150 bg-zinc-50/70 text-xs text-zinc-550 flex items-center justify-between">
+          <span>System status</span>
+          <div className="flex items-center gap-1.5 font-medium text-green-700">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+            Online
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+};
+export default Sidebar;
