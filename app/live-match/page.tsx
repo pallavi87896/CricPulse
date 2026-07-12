@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useApp, Match, Player, PlayerStats } from "@/context/AppContext";
 import PageHeader from "@/components/PageHeader";
 import Card from "@/components/Card";
 import Button from "@/components/Button";
@@ -12,29 +11,10 @@ import { MatchType } from "@/types/matchType";
 import { BallEventType } from "@/types/ballEventType";
 import { CommentType } from "@/types/commentType";
 import { PlayerStatsType } from "@/types/playerStatsType";
+import { PlayerType } from "@/types/playerType";
 
-export default function LiveMatchPage() {
-  const {
-    matches,
-    players,
-    teams,
-    playerStats,
-    ballEvents,
-    comments,
-    addBall,
-    undoBall,
-    changeBowler,
-    changeStriker,
-    changeNonStriker,
-    endOver,
-    endInnings,
-    endMatch,
-    addComment,
-    getTeamName,
-    getTeamLogo,
-    getPlayerName,
-  } = useApp();
 
+export default function LiveMatchesPage(){
   // Active scoring match state
   const [selectedMatchId, setSelectedMatchId] = useState<string>("");
   const [liveMatches,setLiveMatches] = useState<MatchType[]>([]);
@@ -43,6 +23,9 @@ export default function LiveMatchPage() {
   const [match,setMatch] = useState<MatchType | null>(null);
   const [scorecard,setScorecard] = useState<PlayerStatsType[]>([]);
   const [recentBalls,setRecentBalls] = useState<BallEventType[]>([]);
+
+  const [bowlingPlayers,setBowlingPlayers] = useState<PlayerType[]>([]);
+  const [battingPlayers,setBattingPlayers] = useState<PlayerType[]>([]);
   const [comments,setComments] = useState<CommentType[]>([]);
 
   const fetchMatches = async()=>{
@@ -50,27 +33,56 @@ export default function LiveMatchPage() {
 
     const data = await res.json();
 
+    if (!res.ok) {
+      alert("Failed to fetch matches");
+      return;
+    }
+
+    console.log(data.match);
+
     const filteredData = data.filter((match : MatchType)=> match.status === "Live");
     setLiveMatches(filteredData);
 
     if(filteredData.length>0){
-      setSelectedMatchId(liveMatches[0]._id);
+      setSelectedMatchId(filteredData[0]._id);
     }
+    setLoading(false);
   };
 
   const fetchLiveMatches = async(matchId:string)=>{
-    const res = await fetch(`/api/live-match/${matchId}`)
+    const res = await fetch(`/api/match/${matchId}/live`)
 
-    if(!res.json) throw new Error("error getting the live match");
+    if(!res.ok) {
+      const err = await res.json();
+    console.log(err);
+    alert(err.msg);
+    return;
+    }
 
     const data = await res.json();
+
+    console.log(data.match);
+
+    setMatch(data.match);
+    setScorecard(data.scorecard);
+    setRecentBalls(data.recentBalls);
+    setComments(data.comments);
+    setBattingPlayers(data.battingPlayers);
+    setBowlingPlayers(data.bowlingPlayers);
   }
-
-  useEffect(()=>{fetchLiveMatches(selectedMatchId)},[]);
-
+  
   
 
-  const seletedMatch = liveMatches.find((match)=>match._id === selectedMatchId);
+ useEffect(() => {
+    if (selectedMatchId) {
+        fetchLiveMatches(selectedMatchId);
+    }
+  }, [selectedMatchId]);
+
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
 
   // Wicket Modal State
   const [isWicketModalOpen, setIsWicketModalOpen] = useState(false);
@@ -96,17 +108,6 @@ export default function LiveMatchPage() {
   // Custom commentary text input state
   const [customComment, setCustomComment] = useState("");
 
-  // Filter live matches
-  const liveMatchesList = matches.filter((m) => m.status === "Live");
-
-  // Automatically select the first live match if not set
-  React.useEffect(() => {
-    if (!selectedMatchId && liveMatchesList.length > 0) {
-      setSelectedMatchId(liveMatchesList[0]._id);
-    }
-  }, [liveMatchesList, selectedMatchId]);
-
-  const match = matches.find((m) => m._id === selectedMatchId);
 
   // If no match selected
   if (!match) {
@@ -123,27 +124,26 @@ export default function LiveMatchPage() {
               Create a match and set its status to "Live" on the Matches page, or select an upcoming match below to set it Live.
             </p>
 
-            {matches.filter((m) => m.status === "Upcoming").length > 0 && (
+            {liveMatches.filter((m) => m.status === "Upcoming").length > 0 && (
               <div className="mt-6 w-full max-w-xs flex flex-col gap-3">
                 <Select
                   label="Select Upcoming Match to Start"
                   options={[
                     { value: "", label: "-- Choose Match --" },
-                    ...matches
+                    ...liveMatches
                       .filter((m) => m.status === "Upcoming")
                       .map((m) => ({
                         value: m._id,
-                        label: `${getTeamName(m.teamA)} vs ${getTeamName(m.teamB)}`,
+                        label: `${m.teamA.name}vs ${m.teamB.name}`,
                       })),
                   ]}
                   value={selectedMatchId}
                   onChange={(e) => {
                     const id = e.target.value;
                     if (id) {
-                      const mToStart = matches.find((x) => x._id === id);
+                      const mToStart = liveMatches.find((x) => x._id === id);
                       if (mToStart) {
-                        mToStart.status = "Live";
-                        localStorage.setItem("cp_matches", JSON.stringify(matches));
+                       
                         setSelectedMatchId(id);
                       }
                     }
@@ -157,14 +157,10 @@ export default function LiveMatchPage() {
     );
   }
 
-  // Derived properties for current match
-  const battingPlayers = players.filter((p) => p.team === match.battingTeam);
-  const bowlingPlayers = players.filter((p) => p.team === match.bowlingTeam);
-
   // Stats lookups
   const getStat = (playerId: string) => {
     return (
-      playerStats.find((ps) => ps.match === match._id && ps.player === playerId) || {
+      scorecard.find((ps) =>  ps.player._id === playerId) || {
         runs: 0,
         balls: 0,
         wicketsTaken: 0,
@@ -175,9 +171,9 @@ export default function LiveMatchPage() {
     );
   };
 
-  const strikerStat = getStat(match.currStriker);
-  const nonStrikerStat = getStat(match.currNonStriker);
-  const bowlerStat = getStat(match.currBowler);
+  const strikerStat = getStat(match.currStriker._id ?? "");
+  const nonStrikerStat = getStat(match.currNonStriker._id ?? "");
+  const bowlerStat = getStat(match.currBowler._id ?? "");
 
   // Calculations
   const totalOvers = match.overs;
@@ -199,7 +195,7 @@ export default function LiveMatchPage() {
   const bowlerEcon = bowlerOversFractions > 0 ? (bowlerStat.runsConceded / bowlerOversFractions).toFixed(2) : "0.00";
 
   // Over History Calculation
-  const currentMatchEvents = ballEvents.filter((b) => b.match === match._id);
+  const currentMatchEvents = recentBalls;
   const recentBallsList = currentMatchEvents.slice(-6); // last 6 balls
 
   // Group events by overs for over history
@@ -248,35 +244,82 @@ export default function LiveMatchPage() {
   }
 
   // Handle Score keypad actions
-  const handleScoreRuns = (runs: number) => {
-    addBall(match._id, {
-      ballType: "Normal",
-      batsmanRuns: runs,
-      wicket: false,
-      extraRuns: 0,
+const postBallEvent = async (payload: {
+  match: string;
+  ballType: "Normal" | "Wide" | "NoBall" | "Bye" | "LegBye";
+  batsmanRuns: number;
+  wicket: boolean;
+  extraRuns: number;
+  wicketType?: string;
+  outPlayer?: string;
+  newBatsman?: string;
+  newBowler?: string;
+  newStriker?: string;
+  newNonStriker?: string;
+}) => {
+
+  
+    
+  try {
+    const res = await fetch("/api/ballEvent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
+
+    const data = await res.json();
+
+    console.log(payload)
+
+    if (!res.ok) {
+    alert(data.msg);
+    return;
+    }
+
+    if(data.overEnded) {
+      setIsBowlerModalOpen(true);
+    }
+
+    await fetchLiveMatches(selectedMatchId);
+  } catch (err) {
+    console.error(err);
+  }
+ };
+
+ const handleScoreRuns = async (runs: number) => {
+  await postBallEvent({
+    match: match._id,
+    ballType: "Normal",
+    batsmanRuns: runs,
+    wicket: false,
+    extraRuns: 0,
+  });
   };
 
-  const handleScoreExtra = (type: "Wide" | "NoBall" | "Bye" | "LegBye", runs: number = 0) => {
-    // Standard bye / leg bye usually represents run values like 1, 2, 4. So we default to 1, or prompt
-    const defaultRuns = type === "Wide" || type === "NoBall" ? 0 : 1;
-    addBall(match._id, {
-      ballType: type,
-      batsmanRuns: type === "NoBall" ? runs : 0, // batsman can score runs off no-balls
+  const handleScoreExtra = async(type: "Wide" | "NoBall" | "Bye" | "LegBye", runs: number = 0) => {
+
+    await postBallEvent({
+      match:match._id,
+      ballType:type,
+      batsmanRuns:type === "NoBall" ? runs : 0,
       wicket: false,
-      extraRuns: type === "Wide" || type === "NoBall" ? runs : runs || defaultRuns,
-    });
-  };
+      extraRuns: type==="Wide" || type==="NoBall"?runs+1:runs
+    })
+
+    };
+
 
   // Open Wicket Dialog
   const handleOpenWicket = () => {
     setWicketType("Bowled");
-    setOutPlayerId(match.currStriker);
+    setOutPlayerId(match.currStriker._id);
     
     // Suggest first player from batting team who hasn't batted yet
-    const alreadyBattedIds = playerStats
-      .filter((ps) => ps.match === match._id && (ps.runs > 0 || ps.balls > 0 || ps.isOut || ps.player === match.currStriker || ps.player === match.currNonStriker))
-      .map((ps) => ps.player);
+    const alreadyBattedIds = scorecard
+      .filter((ps) =>  (ps.runs > 0 || ps.balls > 0 || ps.isOut || ps.player._id === match.currStriker._id || ps.player._id === match.currNonStriker._id))
+      .map((ps) => ps.player._id);
 
     const unbattedPlayers = battingPlayers.filter((p) => !alreadyBattedIds.includes(p._id));
     setNewBatsmanId(unbattedPlayers[0]?._id || "");
@@ -286,32 +329,50 @@ export default function LiveMatchPage() {
 
   const handleSaveWicket = (e: React.FormEvent) => {
     e.preventDefault();
-    addBall(match._id, {
-      ballType: "Normal",
-      batsmanRuns: 0,
-      wicket: true,
-      wicketType,
-      outPlayer: outPlayerId,
-      newBatsman: newBatsmanId || undefined,
-      extraRuns: Number(wicketExtraRuns),
-    });
-    setIsWicketModalOpen(false);
+    postBallEvent({
+    match: match._id,
+    ballType: "Normal",
+    batsmanRuns: 0,
+    wicket: true,
+    wicketType,
+    outPlayer: outPlayerId,
+    newBatsman: newBatsmanId,
+    extraRuns: Number(wicketExtraRuns)
+});
+setIsWicketModalOpen(false);
   };
 
   // Open Bowler Modal
   const handleOpenBowlerChange = () => {
     const activeBowlers = bowlingPlayers.filter((p) => p.role === "Bowler" || p.role === "All-Rounder");
-    const otherBowlers = activeBowlers.filter((p) => p._id !== match.currBowler);
+    const otherBowlers = activeBowlers.filter((p) => p._id !== match.currBowler._id);
     setNewBowlerId(otherBowlers[0]?._id || bowlingPlayers[0]?._id || "");
     setIsBowlerModalOpen(true);
   };
 
-  const handleSaveBowlerChange = (e: React.FormEvent) => {
+  const handleSaveBowlerChange =async  (e: React.FormEvent) => {
     e.preventDefault();
-    if (newBowlerId) {
-      changeBowler(match._id, newBowlerId);
-    }
-    setIsBowlerModalOpen(false);
+            const res = await fetch("/api/match", {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                id: match._id,
+                action: "changeBowler",
+                newBowler: newBowlerId,
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.msg);
+            return;
+        }
+
+        setIsBowlerModalOpen(false);
+        await fetchLiveMatches(selectedMatchId);
   };
 
   // Open Innings Modal
@@ -320,8 +381,8 @@ export default function LiveMatchPage() {
     const nextBattingTeamId = match.bowlingTeam;
     const nextBowlingTeamId = match.battingTeam;
     
-    const nextBatters = players.filter((p) => p.team === nextBattingTeamId);
-    const nextBowlers = players.filter((p) => p.team === nextBowlingTeamId);
+    const nextBatters = battingPlayers.filter((p) => p.team._id === nextBattingTeamId._id);
+    const nextBowlers = bowlingPlayers.filter((p) => p.team._id === nextBowlingTeamId._id);
 
     setInnStriker(nextBatters[0]?._id || "");
     setInnNonStriker(nextBatters[1]?._id || "");
@@ -335,30 +396,72 @@ export default function LiveMatchPage() {
       alert("Striker and Non-Striker must be different players.");
       return;
     }
-    endInnings(match._id, innStriker, innNonStriker, innBowler);
     setIsInningsModalOpen(false);
   };
 
   // Open End Match Modal
   const handleOpenEndMatch = () => {
-    setWinnerId(match.teamA);
+    setWinnerId(match.teamA._id);
     setIsEndMatchModalOpen(true);
   };
 
-  const handleSaveEndMatch = (e: React.FormEvent) => {
-    e.preventDefault();
-    endMatch(match._id, winnerId);
-    setIsEndMatchModalOpen(false);
+  const handleSaveEndMatch = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const res = await fetch("/api/match", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: match._id,
+      action: "endMatch",
+      winner: winnerId,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.msg);
+    return;
+  }
+
+  setIsEndMatchModalOpen(false);
+
+  await fetchMatches();
+  await fetchLiveMatches(selectedMatchId);
   };
 
   // Custom commentary
-  const handleAddCustomComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customComment.trim()) {
-      addComment(match._id, "Scorer Panel", customComment.trim());
-      setCustomComment("");
-    }
-  };
+const handleAddCustomComment = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!customComment.trim()) return;
+
+  const res = await fetch("/api/comment", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      match: match._id,
+      username: "Scorer Panel",
+      comment: customComment.trim(),
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.msg);
+    return;
+  }
+
+  setCustomComment("");
+
+  await fetchLiveMatches(selectedMatchId);
+};
 
   // Get ball string representation (e.g. "4", "W", "Wd")
   const getBallText = (ball: any) => {
@@ -378,20 +481,12 @@ export default function LiveMatchPage() {
         description="Score wickets, boundaries, rotates strikes, and publishes commentaries instantly."
         actions={
           <div className="flex items-center gap-2">
-            <Select
-              options={liveMatchesList.map((m) => ({
-                value: m._id,
-                label: `${getTeamName(m.teamA)} vs ${getTeamName(m.teamB)}`,
-              }))}
-              value={selectedMatchId}
-              onChange={(e) => setSelectedMatchId(e.target.value)}
-              className="py-1 px-2.5 max-w-xs shadow-xs text-xs font-semibold"
-            />
+            
             <Button
               variant="secondary"
               size="sm"
               onClick={() => {
-                // Redirect user to matches page if they want to manage states
+                // Redirect user to liveMatches page if they want to manage states
                 window.location.href = "/matches";
               }}
             >
@@ -409,14 +504,14 @@ export default function LiveMatchPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg text-white p-5 flex flex-col gap-4 shadow-sm">
             <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{getTeamLogo(match.battingTeam)}</span>
+                <span className="text-2xl">{match.battingTeam.logo}</span>
                 <div>
-                  <h2 className="text-lg font-bold text-white">{getTeamName(match.battingTeam)}</h2>
+                  <h2 className="text-lg font-bold text-white">{match.battingTeam.logo}</h2>
                   <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Batting Innings {match.innings}</p>
                 </div>
               </div>
               <div>
-                <Badge status="Live" />
+                <Badge status={match.status} />
               </div>
             </div>
 
@@ -455,20 +550,9 @@ export default function LiveMatchPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">Striker 🏏</span>
-                  <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{getPlayerName(match.currStriker)}</h4>
+                  <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currStriker.name}</h4>
                 </div>
-                <button
-                  onClick={() => {
-                    const otherId = battingPlayers.find((p) => p._id !== match.currStriker && p._id !== match.currNonStriker && !getStat(p._id).isOut)?._id;
-                    if (otherId) changeStriker(match._id, otherId);
-                  }}
-                  title="Swap Striker"
-                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                </button>
+                
               </div>
               <div className="flex justify-between items-baseline mt-4">
                 <span className="text-xl font-bold font-mono">{strikerStat.runs}</span>
@@ -483,20 +567,9 @@ export default function LiveMatchPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[9px] font-bold text-zinc-550 uppercase tracking-wider">Non-Striker</span>
-                  <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{getPlayerName(match.currNonStriker)}</h4>
+                  <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currNonStriker.name}</h4>
                 </div>
-                <button
-                  onClick={() => {
-                    const otherId = battingPlayers.find((p) => p._id !== match.currStriker && p._id !== match.currNonStriker && !getStat(p._id).isOut)?._id;
-                    if (otherId) changeNonStriker(match._id, otherId);
-                  }}
-                  title="Swap Non-Striker"
-                  className="text-zinc-400 hover:text-zinc-600 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                </button>
+                
               </div>
               <div className="flex justify-between items-baseline mt-4">
                 <span className="text-xl font-bold font-mono text-zinc-700">{nonStrikerStat.runs}</span>
@@ -510,13 +583,13 @@ export default function LiveMatchPage() {
             <Card className="bg-white border-l-4 border-l-zinc-700">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-[9px] font-bold text-zinc-550 uppercase tracking-wider">Bowler ⚾</span>
-                  <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{getPlayerName(match.currBowler)}</h4>
+                  <span className="text-[9px] font-bold text-zinc-650 uppercase tracking-wider">Bowler ⚾</span>
+                  <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currBowler.name}</h4>
                 </div>
                 <button
                   onClick={handleOpenBowlerChange}
                   title="Change Bowler"
-                  className="text-zinc-400 hover:text-zinc-650 cursor-pointer"
+                  className="text-zinc-400 hover:text-zinc-650 cursor-pointer p-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12" />
@@ -580,29 +653,10 @@ export default function LiveMatchPage() {
                   <Button variant="danger" className="py-2.5 font-bold text-xs" onClick={handleOpenWicket}>
                     Wicket 🔴
                   </Button>
-                  <Button
-                    variant="secondary"
-                    className="py-2.5 text-zinc-700 hover:bg-zinc-100 font-semibold text-xs"
-                    onClick={() => undoBall(match._id)}
-                    disabled={currentMatchEvents.length === 0}
-                  >
-                    Undo Last Ball
-                  </Button>
                   <Button variant="secondary" className="py-2.5 font-semibold text-xs" onClick={handleOpenBowlerChange}>
                     Change Bowler
                   </Button>
-                  <Button
-                    variant="secondary"
-                    className="py-2.5 font-semibold text-xs"
-                    onClick={() => {
-                      // Autocomplete current over end or force swap strikers
-                      const nextBId = bowlingPlayers.find(p => p._id !== match.currBowler)?._id || "";
-                      if (nextBId) endOver(match._id, nextBId);
-                      alert("Over Ended. Strike Swapped. Choose a Bowler!");
-                    }}
-                  >
-                    End Over
-                  </Button>
+                  
                 </div>
               </div>
 
@@ -680,12 +734,12 @@ export default function LiveMatchPage() {
                   <div className="divide-y divide-zinc-100">
                     {battingPlayers.map((p) => {
                       const stats = getStat(p._id);
-                      if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== match.currStriker && p._id !== match.currNonStriker) {
+                      if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== match.currStriker._id && p._id !== match.currNonStriker._id) {
                         return null; // Not batted yet
                       }
                       
-                      const isStriker = p._id === match.currStriker;
-                      const isNonStriker = p._id === match.currNonStriker;
+                      const isStriker = p._id === match.currStriker._id;
+                      const isNonStriker = p._id === match.currNonStriker._id;
 
                       return (
                         <div key={p._id} className={`px-3 py-1.5 flex justify-between items-center ${isStriker || isNonStriker ? "bg-blue-50/30" : ""}`}>
@@ -720,10 +774,10 @@ export default function LiveMatchPage() {
                   <div className="divide-y divide-zinc-100">
                     {bowlingPlayers.map((p) => {
                       const stats = getStat(p._id);
-                      if (stats.legalBallsBowled === 0 && p._id !== match.currBowler) {
+                      if (stats.legalBallsBowled === 0 && p._id !== match.currBowler._id) {
                         return null; // Not bowled yet
                       }
-                      const isBowler = p._id === match.currBowler;
+                      const isBowler = p._id === match.currBowler._id;
                       const ovs = `${Math.floor(stats.legalBallsBowled / 6)}.${stats.legalBallsBowled % 6}`;
 
                       return (
@@ -760,7 +814,6 @@ export default function LiveMatchPage() {
 
             <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto divide-y divide-zinc-100">
               {comments
-                .filter((c) => c.match === match._id)
                 .slice()
                 .reverse()
                 .map((comm) => (
@@ -797,8 +850,8 @@ export default function LiveMatchPage() {
           <Select
             label="Dismissed Player"
             options={[
-              { value: match.currStriker, label: `${getPlayerName(match.currStriker)} (Striker)` },
-              { value: match.currNonStriker, label: `${getPlayerName(match.currNonStriker)} (Non-Striker)` },
+              { value: match.currStriker._id, label: `${match.currStriker.name} (Striker)` },
+              { value: match.currNonStriker._id, label: `${match.currNonStriker.name} (Non-Striker)` },
             ]}
             value={outPlayerId}
             onChange={(e) => setOutPlayerId(e.target.value)}
@@ -812,7 +865,7 @@ export default function LiveMatchPage() {
               ...battingPlayers
                 .filter((p) => {
                   const stat = getStat(p._id);
-                  return !stat.isOut && p._id !== match.currStriker && p._id !== match.currNonStriker;
+                  return !stat.isOut && p._id !== match.currStriker._id && p._id !== match.currNonStriker._id;
                 })
                 .map((p) => ({ value: p._id, label: p.name })),
             ]}
@@ -837,7 +890,7 @@ export default function LiveMatchPage() {
           <Select
             label="Select Next Bowler"
             options={bowlingPlayers
-              .filter((p) => p._id !== match.currBowler)
+              .filter((p) => p._id !== match.currBowler._id)
               .map((p) => ({ value: p._id, label: `${p.name} (${p.role})` }))}
             value={newBowlerId}
             onChange={(e) => setNewBowlerId(e.target.value)}
@@ -854,19 +907,19 @@ export default function LiveMatchPage() {
 
           <Select
             label="Innings Opening Striker"
-            options={players.filter((p) => p.team === match.bowlingTeam).map((p) => ({ value: p._id, label: p.name }))}
+            options={battingPlayers.filter((p) => p.team._id === match.bowlingTeam._id).map((p) => ({ value: p._id, label: p.name }))}
             value={innStriker}
             onChange={(e) => setInnStriker(e.target.value)}
           />
           <Select
             label="Innings Opening Non-Striker"
-            options={players.filter((p) => p.team === match.bowlingTeam).map((p) => ({ value: p._id, label: p.name }))}
+            options={battingPlayers.filter((p) => p.team._id === match.battingTeam._id).map((p) => ({ value: p._id, label: p.name }))}
             value={innNonStriker}
             onChange={(e) => setInnNonStriker(e.target.value)}
           />
           <Select
             label="First Bowler"
-            options={players.filter((p) => p.team === match.battingTeam).map((p) => ({ value: p._id, label: p.name }))}
+            options={bowlingPlayers.filter((p) => p.team === match.battingTeam).map((p) => ({ value: p._id, label: p.name }))}
             value={innBowler}
             onChange={(e) => setInnBowler(e.target.value)}
           />
@@ -879,8 +932,8 @@ export default function LiveMatchPage() {
           <Select
             label="Declare Match Winner"
             options={[
-              { value: match.teamA, label: getTeamName(match.teamA) },
-              { value: match.teamB, label: getTeamName(match.teamB) },
+              { value: match.teamA._id, label: match.teamA.name },
+              { value: match.teamB._id, label: match.teamB.name },
             ]}
             value={winnerId}
             onChange={(e) => setWinnerId(e.target.value)}
@@ -890,3 +943,4 @@ export default function LiveMatchPage() {
     </div>
   );
 }
+

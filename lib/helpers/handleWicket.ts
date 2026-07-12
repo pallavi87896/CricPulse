@@ -15,10 +15,8 @@ export function handleWicket( wicket : boolean,
                     match.currNonStriker=newBatsman;
             }
             else{
-                    return Response.json({
-                        msg:"cannot replace batsman"
-                    },
-                )
+                    throw new Error("cannot handle wicket")
+                
             }
         }
 }

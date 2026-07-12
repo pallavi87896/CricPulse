@@ -1,5 +1,5 @@
 import { TeamType } from "./teamType";
-
+import { PlayerType } from "./playerType";
 export interface MatchType {
     _id: string;
 
@@ -18,9 +18,9 @@ export interface MatchType {
     extras: number;
     legalBalls: number;
 
-    currStriker: string;
-    currNonStriker: string;
-    currBowler: string;
+    currStriker: PlayerType;
+    currNonStriker: PlayerType;
+    currBowler: PlayerType;
 
     target: number;
     overs: number;

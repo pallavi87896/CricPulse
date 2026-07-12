@@ -30,15 +30,16 @@ export async function  POST(req:Request){
         
         const { match, ballType, batsmanRuns, wicket, wicketType, outPlayer, extraRuns, newBatsman, newBowler, newStriker, newNonStriker } = await req.json();
 
-
-        const existingMatch=await Match.findById(match);
-
-            if (!mongoose.Types.ObjectId.isValid(match)) {
+        if (!mongoose.Types.ObjectId.isValid(match)) {
             return Response.json(
                 { msg: "Invalid match ID" },
                 { status: 400 }
             );
            }
+
+        const existingMatch=await Match.findById(match);
+
+            
 
         if(existingMatch)
         {
@@ -46,6 +47,17 @@ export async function  POST(req:Request){
             const striker= existingMatch.currStriker;
             const bowler= existingMatch.currBowler;
             const nonStriker= existingMatch.currNonStriker;
+
+            if (!striker || !nonStriker || !bowler) {
+                return Response.json(
+                    {
+                        msg: "Match has not been initialized with striker, non-striker and bowler."
+                    },
+                    {
+                        status:400
+                    }
+                );
+            }
 
         //validate wicket
         if(wicket) {
@@ -127,32 +139,15 @@ export async function  POST(req:Request){
             {
                 swapStrike(existingMatch);
 
-                    if (!newBowler){
-                        return Response.json(
-                        {
-                        msg: "New bowler is required after the over ends."
-                        },
-                        {
-                            status: 400
-                        }
-                       )
-                    }
-            
-
-                //validate newBowler
-                const incomingBowler = await Player.findById(newBowler);
-
-
-                if(!incomingBowler)
-                {
+                if(!newBowler){
                     return Response.json(
                         {
-                            msg:"bowler not found"
+                            msg:"Please select the next bowler."
                         },
                         {
-                            status:404
+                            status:400
                         }
-                    ) 
+                    );
                 }
 
                 
@@ -288,6 +283,17 @@ export async function  POST(req:Request){
                         ) 
                     }
 
+                    if(newStriker === newNonStriker){
+                        return Response.json(
+                            {
+                                msg:"Opening batsmen cannot be the same player."
+                            },
+                            {
+                                status:400
+                            }
+                        );
+                    }
+
                     
                     existingMatch.currStriker = newStriker;
                     existingMatch.currNonStriker = newNonStriker;
@@ -330,7 +336,8 @@ export async function  POST(req:Request){
         
 
         return Response.json({ballEvent,
-            msg:"match updated"
+            msg:"match updated",
+            overEnded
         });
 
         

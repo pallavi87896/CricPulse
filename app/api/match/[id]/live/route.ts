@@ -4,6 +4,7 @@ import Match from "@/models/Match";
 import BallEvent from "@/models/BallEvent";
 import PlayerStats from "@/models/PlayerStats";
 import CommentModel from "@/models/CommentModel";
+import Player from "@/models/Player";
 
 export async function GET(req:Request, { params } : { params : Promise < { id : string } >} ) {
     
@@ -22,14 +23,28 @@ export async function GET(req:Request, { params } : { params : Promise < { id : 
             }
 
             const match = await Match.findById(id)
-                .populate("teamA", "name")
-                .populate("teamB", "name")
+                .populate("teamA", "name logo")
+                .populate("teamB", "name logo")
                 .populate("currStriker", "name")
                 .populate("currNonStriker", "name")
                 .populate("currBowler", "name")
                 .populate("battingTeam", "name")
                 .populate("bowlingTeam", "name")
                 .populate("winner", "name");
+
+                if (!match) {
+                    return Response.json(
+                        { msg: "Match not found" },
+                        { status: 404 }
+                    );
+                }
+
+            const battingPlayers = await Player.find({
+                team:match.battingTeam._id
+            });
+            const bowlingPlayers = await Player.find({
+                team:match.bowlingTeam._id
+            });
 
         if(!match)
         {
@@ -62,7 +77,9 @@ export async function GET(req:Request, { params } : { params : Promise < { id : 
                     match,
                     scorecard,
                     recentBalls,
-                    comments
+                    comments,
+                    battingPlayers,
+                    bowlingPlayers,
                 });
     }
 

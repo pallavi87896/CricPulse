@@ -83,7 +83,7 @@ export async function GET(req: Request) {
             );
         }
 
-        const comments = await CommentModel.find({ match });
+        const comments = await CommentModel.find({ match }).populate("match","._id").populate("comment");
 
         return Response.json(comments);
 

@@ -1,9 +1,10 @@
+import { PlayerType } from "./playerType";
 
 
 export interface PlayerStatsType {
 
     match : string;
-    player : string;
+    player : PlayerType;
     runs : number;
     balls : number;
     isOut ?: boolean;

@@ -2,157 +2,7 @@ import Match from "@/models/Match";
 import { connectDB } from "@/lib/mongodb";
 import Team from "@/models/Team";
 import mongoose from "mongoose";
-import { Console, error } from "console";
-
-export async function POST(req: Request) {
-    try {
-        await connectDB();
-
-        const {
-            teamA,
-            teamB,
-            tossWinner,
-            tossDecision,
-            status,
-            dateTime,
-            venue,
-            overs
-        } = await req.json();
-
-        const ids = [
-            teamA,
-            teamB,
-            tossWinner,
-            
-        ];
-
-        for (const id of ids) {
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-                return Response.json(
-                    { msg: "Invalid ID provided" },
-                    { status: 400 }
-                );
-            }
-        }
-
-        if (String(teamA) === String(teamB)) {
-            return Response.json(
-                { msg: "A team cannot play against itself" },
-                { status: 400 }
-            );
-        }
-
-        if (
-            String(tossWinner) !== String(teamA) &&
-            String(tossWinner) !== String(teamB)
-        ) {
-            return Response.json(
-                { msg: "Invalid toss winner" },
-                { status: 400 }
-            );
-        }
-
-        const existingTeamA = await Team.findById(teamA);
-        const existingTeamB = await Team.findById(teamB);
-
-        if (!existingTeamA || !existingTeamB) {
-            return Response.json(
-                { msg: "Team not found" },
-                { status: 404 }
-            );
-        }
-
-        
-
-        let battingTeam;
-        let bowlingTeam;
-
-        if (tossDecision === "Bat") {
-            battingTeam = tossWinner;
-            bowlingTeam =
-                String(tossWinner) === String(teamA) ? teamB : teamA;
-        } else {
-            bowlingTeam = tossWinner;
-            battingTeam =
-                String(tossWinner) === String(teamA) ? teamB : teamA;
-        }
-
-
-
-        const match = new Match({
-    teamA,
-    teamB,
-    tossWinner,
-    tossDecision,
-    innings: 1,
-    battingTeam,
-    bowlingTeam,
-    status,
-    dateTime,
-    venue,
-    overs,
-});
-
-console.log(match);
-
-await match.validate();      // 👈 ADD THIS
-
-await match.save();
-
-        return Response.json(match, { status: 201 });
-    } catch (err) {
-
-    console.error(err);
-
-    if (err instanceof mongoose.Error.ValidationError) {
-        return Response.json(
-            {
-                validation: err.errors,
-            },
-            {
-                status: 500,
-            }
-        );
-    }
-
-    return Response.json(
-        {
-            error: String(err),
-        },
-        {
-            status: 500,
-        }
-    );
-}
-}
-
-export async function GET() {
-    console.log("GET /api/match called");
-    try {
-        await connectDB();
-        console.log("mongo connecte");
-        const matches = await Match.find()
-        .populate("teamA")
-        .populate("teamB")
-        .populate("tossWinner")
-        .populate("battingTeam")
-        .populate("bowlingTeam")
-        .populate("winner")
-        console.log(matches);
-        return Response.json(matches);
-    } catch (err) {
-        console.error("GET /api/match failed:", err);
-        return Response.json(
-            {
-                msg: "Failed to fetch matches",
-            },
-            {
-                status: 500,
-            }
-        );
-    }
-}
-
+import Player from "@/models/Player";
 export async function PATCH(req: Request) {
     try {
         await connectDB();
@@ -168,30 +18,25 @@ export async function PATCH(req: Request) {
             venue,
             action,
             overs,
+            newBowler,
+            winner,
         } = await req.json();
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return Response.json(
-                {
-                    msg: "Invalid match ID",
-                },
-                {
-                    status: 400,
-                }
+                { msg: "Invalid match ID" },
+                { status: 400 }
             );
         }
-        console.log(action);
+
+        // ---------------- LIKE ----------------
         if (action === "like") {
             const match = await Match.findById(id);
 
             if (!match) {
                 return Response.json(
-                    {
-                        msg: "Match not found",
-                    },
-                    {
-                        status: 404,
-                    }
+                    { msg: "Match not found" },
+                    { status: 404 }
                 );
             }
 
@@ -200,6 +45,85 @@ export async function PATCH(req: Request) {
 
             return Response.json(match);
         }
+
+        // ---------------- CHANGE BOWLER ----------------
+        if (action === "changeBowler") {
+
+            if (!mongoose.Types.ObjectId.isValid(newBowler)) {
+                return Response.json(
+                    { msg: "Invalid bowler ID" },
+                    { status: 400 }
+                );
+            }
+
+            const match = await Match.findById(id);
+
+            if (!match) {
+                return Response.json(
+                    { msg: "Match not found" },
+                    { status: 404 }
+                );
+            }
+
+            const bowler = await Player.findById(newBowler);
+
+            if (!bowler) {
+                return Response.json(
+                    { msg: "Bowler not found" },
+                    { status: 404 }
+                );
+            }
+
+            match.currBowler = newBowler;
+
+            await match.save();
+
+            return Response.json({
+                msg: "Bowler changed successfully",
+                match,
+            });
+        }
+
+        // ---------------- END MATCH ----------------
+        if (action === "endMatch") {
+
+            if (!mongoose.Types.ObjectId.isValid(winner)) {
+                return Response.json(
+                    { msg: "Invalid winner ID" },
+                    { status: 400 }
+                );
+            }
+
+            const match = await Match.findById(id);
+
+            if (!match) {
+                return Response.json(
+                    { msg: "Match not found" },
+                    { status: 404 }
+                );
+            }
+
+            const winningTeam = await Team.findById(winner);
+
+            if (!winningTeam) {
+                return Response.json(
+                    { msg: "Winning team not found" },
+                    { status: 404 }
+                );
+            }
+
+            match.winner = winner;
+            match.status = "Ended";
+
+            await match.save();
+
+            return Response.json({
+                msg: "Match ended successfully",
+                match,
+            });
+        }
+
+        // ---------------- NORMAL EDIT ----------------
 
         const updatedMatch = await Match.findByIdAndUpdate(
             id,
@@ -211,7 +135,7 @@ export async function PATCH(req: Request) {
                 status,
                 dateTime,
                 venue,
-                overs
+                overs,
             },
             {
                 new: true,
@@ -220,67 +144,19 @@ export async function PATCH(req: Request) {
 
         if (!updatedMatch) {
             return Response.json(
-                {
-                    msg: "Match not found",
-                },
-                {
-                    status: 404,
-                }
+                { msg: "Match not found" },
+                { status: 404 }
             );
         }
 
         return Response.json(updatedMatch);
+
     } catch (err) {
-        
         console.error(err);
+
         return Response.json(
             {
-                error:String(error),
-            },
-            {
-                status: 500,
-            }
-        );
-    }
-}
-
-export async function DELETE(req: Request) {
-    try {
-        await connectDB();
-
-        const { id } = await req.json();
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return Response.json(
-                {
-                    msg: "Invalid match ID",
-                },
-                {
-                    status: 400,
-                }
-            );
-        }
-
-        const deletedMatch = await Match.findByIdAndDelete(id);
-
-        if (!deletedMatch) {
-            return Response.json(
-                {
-                    msg: "Match not found",
-                },
-                {
-                    status: 404,
-                }
-            );
-        }
-
-        return Response.json({
-            msg: "Match deleted successfully",
-        });
-    } catch (err) {
-        return Response.json(
-            {
-                msg: "Failed to delete match",
+                msg: "Server error",
             },
             {
                 status: 500,
