@@ -53,6 +53,25 @@ export async function POST(req: NextRequest) {
             comment,
         });
 
+        await comments.save();
+
+        try{
+        await fetch("http://localhost:4000/emit",{
+            method:"POST",
+            headers:{
+                "Content-type":"application/json"
+           },
+           body:JSON.stringify({
+            room:existingMatch._id.toString(),
+           event:"match_updated"
+           })
+        });
+        }
+        catch(err){
+            console.error("failed to notify socket server",err);
+        }
+
+
         return Response.json(comments);
 
     } catch (err) {

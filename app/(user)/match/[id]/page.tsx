@@ -11,6 +11,10 @@ import { PlayerStatsType } from "@/types/playerStatsType";
 import { BallEventType } from "@/types/ballEventType";
 import { CommentType } from "@/types/commentType";
 import { PlayerType } from "@/types/playerType";
+import { getSocket } from "@/socket/client";
+import { useCallback } from "react";
+import Loader from "@/components/Loader";
+
 
 interface MatchViewProps {
   params: Promise<{ id: string }>;
@@ -28,7 +32,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"scorecard" | "commentary">("scorecard");
 
-  const fetchLiveMatchData = async () => {
+  const fetchLiveMatchData = useCallback(async () => {
     try {
       const res = await fetch(`/api/match/${matchId}/live`);
       if (!res.ok) {
@@ -46,21 +50,31 @@ export default function MatchViewPage({ params }: MatchViewProps) {
     } finally {
       setLoading(false);
     }
-  };
+  },[matchId]);
 
   useEffect(() => {
+
+    const socket= getSocket();
+
+    //client emit sends an event(msg) to the server
+    //now the server knows which match the user is watching exactly
+    socket.emit("join_match",matchId);
+
+    //if the be says match updated then u call the function
+    socket.on("match_updated",()=>{
+      fetchLiveMatchData();
+    });
+
     fetchLiveMatchData();
     // Setup polling every 5 seconds
-    const interval = setInterval(fetchLiveMatchData, 5000);
-    return () => clearInterval(interval);
-  }, [matchId]);
+    return ()=>{
+      socket.off("match_updated");
+    };
+
+  }, [matchId,fetchLiveMatchData]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin text-brand-accent rounded-full h-10 w-10 border-b-2 border-current"></div>
-      </div>
-    );
+    return <Loader/>;
   }
 
   if (!match) {

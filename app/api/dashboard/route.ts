@@ -7,7 +7,7 @@ import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
 
-    await requireAdmin(req)
+    await requireAdmin(req);
 
     await connectDB();
 

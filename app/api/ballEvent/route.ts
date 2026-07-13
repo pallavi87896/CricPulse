@@ -12,6 +12,8 @@ import { finishMatch } from "@/lib/helpers/finishMatch";
 import { handleWicket } from "@/lib/helpers/handleWicket";
 import { requireAdmin } from "@/lib/auth";
 import { NextRequest } from "next/server";
+import { io } from "socket.io-client";
+import { getIO } from "@/socket/io";
 
 interface IMatch extends mongoose.Document{
     currStriker:mongoose.Types.ObjectId;
@@ -31,6 +33,7 @@ export async function  POST(req:NextRequest){
 
         await requireAdmin(req);
         await connectDB();
+
         
         const { match, ballType, batsmanRuns, wicket, wicketType, outPlayer, extraRuns, newBatsman, newBowler, newStriker, newNonStriker } = await req.json();
 
@@ -88,21 +91,39 @@ export async function  POST(req:NextRequest){
                       },
                     {
                         status:400
-                    });
+                      });
                    }
                 }
 
-            //validate newbatsman
-            const incomingPlayer= await Player.findById(newBatsman);
-            
-                if(!incomingPlayer){
-                   return Response.json(
-                   {
-                    msg:"player not found"
-                   },
-                   {
-                    status:404
-                   })
+                // If this wicket will result in all out (wickets + 1 >= 10) or overs are ending, we don't strictly require newBatsman.
+                // We check if newBatsman is provided. If so, validate it. If not, only allow if the innings/match is ending.
+                const nextWickets = existingMatch.wickets + 1;
+                const isAllOut = nextWickets >= 10;
+                const isLegalDelivery = (ballType === "Normal" || ballType === "Bye" || ballType === "LegBye");
+                const willOversEnd = isLegalDelivery && (existingMatch.legalBalls + 1 >= existingMatch.overs * 6);
+                const inningsEnding = isAllOut || willOversEnd;
+
+                if (newBatsman) {
+                    const incomingPlayer = await Player.findById(newBatsman);
+                    if (!incomingPlayer) {
+                       return Response.json(
+                       {
+                        msg: "player not found"
+                       },
+                       {
+                        status: 404
+                       });
+                    }
+                } else {
+                    if (!inningsEnding) {
+                        return Response.json(
+                        {
+                            msg: "New batsman is required to continue the match."
+                        },
+                        {
+                            status: 400
+                        });
+                    }
                 }
         }
 
@@ -141,13 +162,15 @@ export async function  POST(req:NextRequest){
             outPlayer,
             nonStriker)
 
-            //rotate strike
-            if((ballType==="Normal"|| ballType==="NoBall")&&(batsmanRuns===1 || batsmanRuns===3)){
-                swapStrike(existingMatch);
-                
+            //rotate strike based on physical runs run
+            let physicalRuns = 0;
+            if (ballType === "Normal" || ballType === "NoBall") {
+                physicalRuns = batsmanRuns + extraRuns;
+            } else {
+                physicalRuns = extraRuns;
             }
 
-            if((ballType==="Bye" || ballType==="LegBye") && (extraRuns%2!==0)){
+            if (physicalRuns % 2 !== 0) {
                 swapStrike(existingMatch);
             }
 
@@ -302,6 +325,30 @@ export async function  POST(req:NextRequest){
         await bowlerStats.save();
         await existingMatch.save();
 
+        try{
+        await fetch("http://localhost:4000/emit",{
+            method:"POST",
+            headers:{
+                "Content-type":"application/json"
+           },
+           body:JSON.stringify({
+            room:existingMatch._id.toString(),
+           event:"match_updated"
+           })
+        });
+        }
+        catch(err){
+            console.error("failed to notify socket server",err);
+        }
+
+        //gets the socekt server we created
+        //const io = getIO();
+
+        //we use io n not socket because we wanna send this msg to all the sockets
+
+        //so basically server go to mathc._id this room n emit the message
+        //io.to(match._id.toString()).emit("match updated");
+        
         
 
         return Response.json({ballEvent,
@@ -309,7 +356,6 @@ export async function  POST(req:NextRequest){
             overEnded
         });
 
-        
         }
         else
         {
@@ -322,6 +368,8 @@ export async function  POST(req:NextRequest){
                 }
             )
         }
+
+
 
         
     }
