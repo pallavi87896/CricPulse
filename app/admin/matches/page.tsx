@@ -1,6 +1,7 @@
 "use client";
 import SimpleTable from "@/components/SimpleTable";
 import  { useState, useEffect } from "react";
+import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import Button from "@/components/Button";
 import { MatchType } from "@/types/matchType";
@@ -342,9 +343,11 @@ const [formData, setFormData] = useState(initialFormData);
             </td>
             <td className="px-6 py-4 whitespace-nowrap w-48">
               <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={() => handleOpenView(match)}>
-                  View
-                </Button>
+                <Link href={`/match/${match._id}`}>
+                  <Button variant="secondary" size="sm">
+                    View
+                  </Button>
+                </Link>
                 <Button variant="secondary" size="sm" onClick={() => handleEditMatch(match)}>
                     Edit
                 </Button>

@@ -2,9 +2,13 @@ import CommentModel from "@/models/CommentModel";
 import Match from "@/models/Match";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
+import { requireAdmin } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
+
+        await requireAdmin(req);
         await connectDB();
 
         const { match, username, comment } = await req.json();
@@ -65,6 +69,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
     try {
+
         await connectDB();
 
         const { searchParams } = new URL(req.url);
@@ -83,7 +88,7 @@ export async function GET(req: Request) {
             );
         }
 
-        const comments = await CommentModel.find({ match }).populate("match","._id").populate("comment");
+        const comments = await CommentModel.find({ match }).populate("match", "_id");
 
         return Response.json(comments);
 
@@ -99,8 +104,10 @@ export async function GET(req: Request) {
     }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
     try {
+
+        await requireAdmin(req);
         await connectDB();
 
         const { id } = await req.json();

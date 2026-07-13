@@ -149,19 +149,28 @@ export default function Dashboard() {
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {match.status === "Live" ? (
-                  <Link href="/live-match">
-                    <Button variant="primary" size="sm">
-                      Score Match
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/matches">
-                    <Button variant="secondary" size="sm">
-                      View details
-                    </Button>
-                  </Link>
-                )}
+                <div className="flex gap-2">
+                  {match.status === "Live" ? (
+                    <>
+                      <Link href={`/match/${match._id}`}>
+                        <Button variant="primary" size="sm">
+                          View Live ⚡
+                        </Button>
+                      </Link>
+                      <Link href="/live-match">
+                        <Button variant="secondary" size="sm" className="text-zinc-650 hover:text-zinc-900 border-zinc-200">
+                          Score 🛠️
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <Link href={`/match/${match._id}`}>
+                      <Button variant="secondary" size="sm">
+                        View Details
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

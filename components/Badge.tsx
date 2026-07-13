@@ -17,7 +17,7 @@ export const Badge: React.FC<BadgeProps> = ({ status, className = "" }) => {
       statusClasses = "bg-zinc-50 text-zinc-600 border-zinc-200";
       break;
     case "Ended":
-      statusClasses = "bg-blue-50 text-blue-700 border-blue-200";
+      statusClasses = "bg-zinc-100 text-zinc-700 border-zinc-200";
       break;
     default:
       statusClasses = "bg-zinc-50 text-zinc-600 border-zinc-200";

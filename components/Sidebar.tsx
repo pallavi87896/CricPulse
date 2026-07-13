@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { POST } from "@/app/api/ballEvent/route";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -11,11 +12,12 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navigation = [
     {
       name: "Dashboard",
-      href: "/",
+      href: "/admin",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
@@ -24,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     },
     {
       name: "Teams",
-      href: "/teams",
+      href: "/admin/teams",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
@@ -33,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     },
     {
       name: "Players",
-      href: "/players",
+      href: "/admin/players",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -42,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     },
     {
       name: "Matches",
-      href: "/matches",
+      href: "/admin/matches",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -51,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     },
     {
       name: "Live Match",
-      href: "/live-match",
+      href: "/admin/live-match",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -59,6 +61,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       ),
     },
   ];
+
+  const handleLogout = async () => {
+    try {
+      
+      const res = await fetch("/api/auth/logout",{
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if(!res.ok){
+        throw new Error("cannot logout")
+      }
+      
+      setIsOpen(false);
+      router.push("/admin/login");
+      
+    } catch (err) {
+      console.error("Logout execution fault:", err);
+    }
+  };
 
   return (
     <>
@@ -78,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       >
         {/* Brand Header */}
         <div className="h-16 px-6 border-b border-zinc-200 flex items-center gap-2.5">
-          <div className="bg-blue-600 text-white p-1.5 rounded-md">
+          <div className="bg-brand-accent text-white p-1.5 rounded-md">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -100,11 +123,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-md transition-colors ${
                   isActive
-                    ? "bg-zinc-100 text-blue-600"
+                    ? "bg-brand-secondary text-brand-accent"
                     : "text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
               >
-                <span className={isActive ? "text-blue-600" : "text-zinc-400"}>
+                <span className={isActive ? "text-brand-accent" : "text-zinc-400"}>
                   {item.icon}
                 </span>
                 {item.name}
@@ -112,6 +135,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             );
           })}
         </nav>
+
+        {/* Action Tray Container (Logout) */}
+        <div className="px-4 py-3 border-t border-zinc-100 flex flex-col gap-1">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-md transition-colors group text-left"
+          >
+            <span className="text-red-400 group-hover:text-red-600 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </span>
+            Exit Terminal
+          </button>
+        </div>
 
         {/* Footer info */}
         <div className="p-4 border-t border-zinc-150 bg-zinc-50/70 text-xs text-zinc-550 flex items-center justify-between">
@@ -125,4 +163,5 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     </>
   );
 };
+
 export default Sidebar;

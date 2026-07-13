@@ -2,9 +2,12 @@ import { connectDB } from "@/lib/mongodb";
 import Team from "@/models/Team";
 import Player from "@/models/Player";
 import Match from "@/models/Match";
+import { requireAdmin } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
+export async function GET(req: NextRequest) {
 
-export async function GET(req: Request) {
+    await requireAdmin(req)
 
     await connectDB();
 

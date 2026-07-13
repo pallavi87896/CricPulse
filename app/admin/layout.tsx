@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/Navbar";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
       {/* Sidebar navigation */}

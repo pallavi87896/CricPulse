@@ -1,9 +1,14 @@
 import Team from "@/models/Team";
 import { connectDB } from "@/lib/mongodb";
 import mongoose from "mongoose";
+import { requireAdmin } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+
     try {
+
+        await requireAdmin(req);
         await connectDB();
 
         const { name, logo } = await req.json();
@@ -58,8 +63,10 @@ export async function GET() {
     }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
     try {
+
+        await requireAdmin(req);
         await connectDB();
 
         const { id, name, logo } = await req.json();
@@ -105,8 +112,10 @@ export async function PATCH(req: Request) {
     }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
     try {
+
+        await requireAdmin(req);
         await connectDB();
 
         const { id } = await req.json();

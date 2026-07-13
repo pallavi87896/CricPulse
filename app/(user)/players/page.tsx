@@ -59,7 +59,7 @@ export default function PlayersPage() {
     setEditingPlayer(player);
     setName(player.name);
     setRole(player.role || "");
-    setTeam(player.team._id);
+    setTeam(player.team?._id || (typeof player.team === "string" ? player.team : ""));
     setNameError("");
     setTeamError("");
     setIsModalOpen(true);
@@ -281,8 +281,8 @@ export default function PlayersPage() {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-zinc-900">
                 <div className="flex items-center gap-1.5">
-                  <span>{player.team.logo}</span>
-                  <span>{player.team.name}</span>
+                  <span>{player.team?.logo}</span>
+                  <span>{player.team?.name}</span>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap w-48">

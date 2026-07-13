@@ -10,6 +10,8 @@ import { updateBowlerStats } from "@/lib/helpers/updateBowlerStats";
 import { startSecondInnings } from "@/lib/helpers/startSecondInnings";
 import { finishMatch } from "@/lib/helpers/finishMatch";
 import { handleWicket } from "@/lib/helpers/handleWicket";
+import { requireAdmin } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
 interface IMatch extends mongoose.Document{
     currStriker:mongoose.Types.ObjectId;
@@ -22,10 +24,12 @@ function swapStrike(match:IMatch){
     match.currNonStriker=temp;
 }
 
-export async function  POST(req:Request){
+export async function  POST(req:NextRequest){
 
     try
     {
+
+        await requireAdmin(req);
         await connectDB();
         
         const { match, ballType, batsmanRuns, wicket, wicketType, outPlayer, extraRuns, newBatsman, newBowler, newStriker, newNonStriker } = await req.json();
@@ -57,6 +61,21 @@ export async function  POST(req:Request){
                         status:400
                     }
                 );
+            }
+
+            // Check if the current bowler is trying to bowl consecutive overs
+            if (existingMatch.legalBalls > 0 && existingMatch.legalBalls % 6 === 0) {
+                const lastBall = await BallEvent.findOne({ match: existingMatch._id }).sort({ createdAt: -1 });
+                if (lastBall && lastBall.bowler.equals(bowler)) {
+                    return Response.json(
+                        {
+                            msg: "The same bowler cannot bowl consecutive overs. Please select a new bowler."
+                        },
+                        {
+                            status:400
+                        }
+                    );
+                }
             }
 
         //validate wicket
@@ -139,30 +158,19 @@ export async function  POST(req:Request){
             {
                 swapStrike(existingMatch);
 
-                if(!newBowler){
-                    return Response.json(
-                        {
-                            msg:"Please select the next bowler."
+                // If a newBowler was passed (e.g. manual transition), update it.
+                // Otherwise, the client will change the bowler in the next step via PATCH /api/match
+                if (newBowler) {
+                    if (bowler.equals(newBowler)) {
+                        return Response.json({
+                            msg: "same bowler cant bowl everytime",
                         },
                         {
-                            status:400
-                        }
-                    );
+                            status: 400
+                        });
+                    }
+                    existingMatch.currBowler = newBowler;
                 }
-
-                
-                if(bowler.equals(newBowler)){
-                    return Response.json({
-                        msg:"same bowler cant bowl everytime",
-
-                    },
-                {
-                    status:400
-                })
-                }
-
-                existingMatch.currBowler=newBowler;
-
             }
             
         // PlayerStats
@@ -238,52 +246,13 @@ export async function  POST(req:Request){
 
                 if(existingMatch.wickets === 10 || existingMatch.legalBalls >= existingMatch.overs*6 )
                 {
-                    
                     startSecondInnings(existingMatch);
 
-                    const incomingBowler = await Player.findById(newBowler);
+                    const incomingBowler = newBowler && mongoose.Types.ObjectId.isValid(newBowler) ? await Player.findById(newBowler) : null;
+                    const incomingStriker = newStriker && mongoose.Types.ObjectId.isValid(newStriker) ? await Player.findById(newStriker) : null;
+                    const incomingNonStriker = newNonStriker && mongoose.Types.ObjectId.isValid(newNonStriker) ? await Player.findById(newNonStriker) : null;
 
-                    if(!incomingBowler)
-                    {
-                        return Response.json(
-                            {
-                                msg:"Bowler not found"
-                            },
-                            {
-                                status:404
-                            }
-                        ) 
-                    }
-
-                    const incomingStriker = await Player.findById(newStriker);
-
-                    if(!incomingStriker)
-                    {
-                        return Response.json(
-                            {
-                                msg:"Striker not found"
-                            },
-                            {
-                                status:404
-                            }
-                        ) 
-                    }
-
-                    const incomingNonStriker = await Player.findById(newNonStriker);
-
-                    if(!incomingNonStriker)
-                    {
-                        return Response.json(
-                            {
-                                msg:"NonStriker not found"
-                            },
-                            {
-                                status:404
-                            }
-                        ) 
-                    }
-
-                    if(newStriker === newNonStriker){
+                    if(incomingStriker && incomingNonStriker && String(incomingStriker._id) === String(incomingNonStriker._id)){
                         return Response.json(
                             {
                                 msg:"Opening batsmen cannot be the same player."
@@ -294,18 +263,18 @@ export async function  POST(req:Request){
                         );
                     }
 
-                    
-                    existingMatch.currStriker = newStriker;
-                    existingMatch.currNonStriker = newNonStriker;
-                    existingMatch.currBowler = newBowler;
+                    existingMatch.currStriker = incomingStriker ? incomingStriker._id : null;
+                    existingMatch.currNonStriker = incomingNonStriker ? incomingNonStriker._id : null;
+                    existingMatch.currBowler = incomingBowler ? incomingBowler._id : null;
 
                     await playerStats.save();
                     await bowlerStats.save();
                     await existingMatch.save();
 
                     return Response.json({
-                    msg:"innings 2 begin"
-                    })
+                        msg:"innings 2 begin",
+                        overEnded
+                    });
                 }
             }
             if(existingMatch.innings===2){

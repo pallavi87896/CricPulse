@@ -23,7 +23,7 @@ export const Input: React.FC<InputProps> = ({
       )}
       <input
         id={inputId}
-        className={`w-full px-3 py-2 text-sm text-zinc-900 border rounded-md shadow-sm outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+        className={`w-full px-3 py-2 text-sm text-zinc-900 border rounded-md shadow-sm outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent transition-colors ${
           error ? "border-red-500 bg-red-50/50" : "border-zinc-300 bg-white"
         } ${className}`}
         {...props}
@@ -58,7 +58,7 @@ export const Select: React.FC<SelectProps> = ({
       )}
       <select
         id={selectId}
-        className={`w-full px-3 py-2 text-sm text-zinc-900 border rounded-md shadow-sm bg-white outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer ${
+        className={`w-full px-3 py-2 text-sm text-zinc-900 border rounded-md shadow-sm bg-white outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent transition-colors cursor-pointer ${
           error ? "border-red-500" : "border-zinc-300"
         } ${className}`}
         {...props}
