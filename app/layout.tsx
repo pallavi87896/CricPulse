@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const sansFont = Plus_Jakarta_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const monoFont = Geist_Mono({
-  variable: "--font-mono",
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
@@ -28,9 +21,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sansFont.variable} ${monoFont.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 font-sans text-zinc-900">
+      <body className={`${inter.className} min-h-full flex flex-col bg-zinc-50 text-zinc-900`}>
         <Providers>{children}
         </Providers>
       </body>

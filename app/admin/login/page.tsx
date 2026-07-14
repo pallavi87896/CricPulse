@@ -18,10 +18,10 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email: username, password }),
       });
 
       if (!res.ok) {
@@ -29,8 +29,8 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Invalid credentials provided");
       }
 
-      // On success, redirect straight to the admin control desk
-      router.push("/admin/dashboard");
+      // Redirect straight to the actual admin index page at /admin
+      router.push("/admin");
     } catch (err: any) {
       setError(err.message || "An unexpected connection error occurred.");
     } finally {
@@ -39,42 +39,46 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-zinc-50/50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-6">
-        
+    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 text-zinc-100 relative overflow-hidden">
+      {/* Background glow effects */}
+      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-[var(--color-brand-primary)]/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-[var(--color-brand-accent)]/10 blur-[120px] pointer-events-none" />
+
+      <div className="w-full max-w-md space-y-8 relative z-10">
         {/* Top Header Card */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <Link href="/" className="flex items-center gap-2 group mb-2">
-            <div className="bg-[var(--color-brand-secondary)] p-2 rounded-lg border border-[var(--color-brand-primary)]/20 text-[var(--color-brand-accent)] group-hover:scale-105 transition-transform">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <div className="flex flex-col items-center text-center space-y-3">
+          <Link href="/" className="flex items-center gap-3 group mb-2">
+            <div className="bg-zinc-900 p-2.5 rounded-xl border border-zinc-800 text-[var(--color-brand-primary)] group-hover:scale-105 transition-transform duration-300">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" className="opacity-30" />
+                <path d="M3 12h3.5l1.5-3.5L10 16.5l2-9.5 2 11.5 1.5-5.5L19 12h2" />
               </svg>
             </div>
-            <span className="font-sans font-black text-2xl tracking-tight text-zinc-900">
+            <span className="font-sans font-black text-3xl tracking-tight text-white">
               Cric<span className="text-[var(--color-brand-accent)]">Pulse</span>
             </span>
           </Link>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900">
-            Control Portal Login
+          <h2 className="text-2xl font-extrabold tracking-tight text-white">
+            Score Admin Terminal
           </h2>
-          <p className="text-xs text-zinc-400 font-medium max-w-xs">
-            Authorized management credentials required to mutate scorecards, players, or active fixtures.
+          <p className="text-xs text-zinc-400 font-medium max-w-xs leading-relaxed">
+            Please enter your management credentials to access live scoring dashboards and team registries.
           </p>
         </div>
 
         {/* Main Interactive Container */}
-        <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-zinc-900/50 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-8 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3 text-xs bg-red-50 border border-red-100 text-red-600 font-semibold rounded-lg flex items-center gap-2 animate-shake">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+              <div className="p-3.5 text-xs bg-red-950/40 border border-red-900/50 text-red-400 font-medium rounded-xl flex items-center gap-3 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
                 {error}
               </div>
             )}
 
             {/* Username Input Group */}
-            <div>
-              <label htmlFor="username" className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
+            <div className="space-y-2">
+              <label htmlFor="username" className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
                 Admin Username
               </label>
               <input
@@ -84,15 +88,15 @@ export default function AdminLoginPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. core_admin"
+                placeholder="e.g. administrator"
                 disabled={loading}
-                className="w-full px-3.5 py-2 text-sm bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:bg-white focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all font-medium"
+                className="w-full px-4 py-3 text-sm bg-zinc-950/80 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-1 focus:ring-[var(--color-brand-primary)] transition-all font-medium"
               />
             </div>
 
             {/* Password Input Group */}
-            <div>
-              <label htmlFor="password" className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
                 Secret Access Token
               </label>
               <input
@@ -104,7 +108,7 @@ export default function AdminLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 disabled={loading}
-                className="w-full px-3.5 py-2 text-sm bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 rounded-lg focus:outline-none focus:bg-white focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition-all font-mono"
+                className="w-full px-4 py-3 text-sm bg-zinc-950/80 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-1 focus:ring-[var(--color-brand-primary)] transition-all font-mono"
               />
             </div>
 
@@ -114,18 +118,18 @@ export default function AdminLoginPage() {
                 type="submit"
                 variant="primary"
                 disabled={loading}
-                className="w-full justify-center font-bold text-xs py-2.5 shadow-sm"
+                className="w-full justify-center font-bold text-xs py-3 rounded-xl shadow-lg shadow-[var(--color-brand-primary)]/10"
               >
-                {loading ? "Authenticating Platform Keys..." : "Verify Identity"}
+                {loading ? "Decrypting Platform Keys..." : "Verify & Access Panel"}
               </Button>
             </div>
           </form>
         </div>
 
         {/* Dynamic Return Navigation Footprint */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center text-xs text-zinc-400 hover:text-zinc-600 font-medium transition-colors gap-1">
-            ← Cancel and return to Live Hub
+        <div className="text-center pt-2">
+          <Link href="/" className="inline-flex items-center text-xs text-zinc-500 hover:text-zinc-300 font-semibold transition-colors gap-1">
+            ← Cancel and return to Live score feed
           </Link>
         </div>
       </div>

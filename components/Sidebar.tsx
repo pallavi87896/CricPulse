@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { POST } from "@/app/api/ballEvent/route";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -102,8 +101,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         {/* Brand Header */}
         <div className="h-16 px-6 border-b border-zinc-200 flex items-center gap-2.5">
           <div className="bg-brand-accent text-white p-1.5 rounded-md">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" className="opacity-30" />
+              <path d="M3 12h3.5l1.5-3.5L10 16.5l2-9.5 2 11.5 1.5-5.5L19 12h2" />
             </svg>
           </div>
           <div>

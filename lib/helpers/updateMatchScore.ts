@@ -13,7 +13,8 @@ export function updateMatchScore(
         
         if(ballType==="Normal")
             {
-                match.score+=batsmanRuns;
+                match.score+=batsmanRuns+extraRuns;
+                match.extras+=extraRuns;
                 match.legalBalls+=1;
 
             }

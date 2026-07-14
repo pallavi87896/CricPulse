@@ -35,7 +35,7 @@ export async function POST(req:Request){
         await Admin.create({
             name,
             email,
-            password
+            password: hashedPassword
         });
 
             return Response.json(

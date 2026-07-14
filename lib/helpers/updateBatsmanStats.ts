@@ -23,7 +23,7 @@ export function updateBatsmanStats(
 
             if (
             wicket &&
-            striker === outPlayer
+            String(striker) === String(outPlayer)
             ) {
             stats.isOut = true;
             }

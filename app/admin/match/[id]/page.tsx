@@ -27,6 +27,13 @@ export default function MatchViewPage({ params }: MatchViewProps) {
   const [bowlingPlayers, setBowlingPlayers] = useState<PlayerType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"scorecard" | "commentary">("scorecard");
+  const [selectedInnings, setSelectedInnings] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    if (match) {
+      setSelectedInnings(match.innings as 1 | 2);
+    }
+  }, [match?.innings]);
 
   const fetchLiveMatchData = async () => {
     try {
@@ -112,6 +119,27 @@ export default function MatchViewPage({ params }: MatchViewProps) {
   const bowlerOversStr = `${Math.floor(bowlerStat.legalBallsBowled / 6)}.${bowlerStat.legalBallsBowled % 6}`;
   const bowlerOversFractions = bowlerStat.legalBallsBowled / 6;
   const bowlerEcon = bowlerOversFractions > 0 ? (bowlerStat.runsConceded / bowlerOversFractions).toFixed(2) : "0.00";
+
+  // Innings-specific scorecard variables
+  const isSecondInnings = match.innings === 2;
+  const isViewingSecondInnings = !isSecondInnings || selectedInnings === 2;
+
+  const selectedBattingPlayers = !isSecondInnings || !isViewingSecondInnings ? bowlingPlayers : battingPlayers;
+  const selectedBowlingPlayers = !isSecondInnings || !isViewingSecondInnings ? battingPlayers : bowlingPlayers;
+
+  const activeStrikerId = !isViewingSecondInnings ? "" : (match.currStriker?._id ?? "");
+  const activeNonStrikerId = !isViewingSecondInnings ? "" : (match.currNonStriker?._id ?? "");
+  const activeBowlerId = !isViewingSecondInnings ? "" : (match.currBowler?._id ?? "");
+
+  const innings1Wickets = scorecard.filter(ps => 
+    bowlingPlayers.some(p => p._id === ps.player?._id) && ps.isOut
+  ).length;
+
+  const innings1Balls = battingPlayers.reduce((acc, p) => {
+    const stats = scorecard.find(ps => ps.player?._id === p._id);
+    return acc + (stats?.legalBallsBowled ?? 0);
+  }, 0);
+  const innings1OversStr = `${Math.floor(innings1Balls / 6)}.${innings1Balls % 6}`;
 
   // Format ball texts chronologically (most recent on right)
   const recentBallsList = [...recentBalls].slice(0, 6).reverse();
@@ -269,94 +297,131 @@ export default function MatchViewPage({ params }: MatchViewProps) {
         <div className="p-5">
           {/* Tab 1: Full Scorecard */}
           {activeTab === "scorecard" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Batting Card */}
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-450 mb-2.5">
-                  Batting Scorecard ({match.battingTeam?.name})
-                </h4>
-                <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
-                  <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-550">
-                    <span>Batsman</span>
-                    <div className="flex gap-4 font-mono">
-                      <span className="w-8 text-right">R</span>
-                      <span className="w-8 text-right">B</span>
-                    </div>
-                  </div>
-                  <div className="divide-y divide-zinc-100">
-                    {battingPlayers.map((p) => {
-                      const stats = getStat(p._id);
-                      if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== match.currStriker?._id && p._id !== match.currNonStriker?._id) {
-                        return null; // Not batted yet
+            <div className="flex flex-col gap-4 w-full">
+              {match.innings === 2 && (
+                <div className="flex justify-center gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInnings(1)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      selectedInnings === 1
+                        ? "bg-brand-accent text-white shadow-xs"
+                        : "bg-zinc-100 text-zinc-650 hover:bg-zinc-200"
+                    }`}
+                  >
+                    Innings 1 ({match.bowlingTeam?.name})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInnings(2)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      selectedInnings === 2
+                        ? "bg-brand-accent text-white shadow-xs"
+                        : "bg-zinc-100 text-zinc-650 hover:bg-zinc-200"
+                    }`}
+                  >
+                    Innings 2 ({match.battingTeam?.name})
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Batting Card */}
+                <div>
+                  <div className="flex justify-between items-center mb-2.5">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-450">
+                      Batting Scorecard ({!isViewingSecondInnings ? match.bowlingTeam?.name : match.battingTeam?.name})
+                    </h4>
+                    <span className="text-xs font-extrabold text-zinc-700">
+                      {!isViewingSecondInnings 
+                        ? `${match.target > 0 ? match.target - 1 : 0}/${innings1Wickets} (${innings1OversStr} ov)`
+                        : `${score}/${wickets} (${oversStr} ov)`
                       }
-                      const isStriker = p._id === match.currStriker?._id;
-                      const isNonStriker = p._id === match.currNonStriker?._id;
-                      return (
-                        <div key={p._id} className={`px-3 py-2 flex justify-between items-center ${isStriker || isNonStriker ? "bg-brand-secondary/35" : ""}`}>
-                          <span className="font-semibold text-zinc-700">
-                            {p.name}
-                            {isStriker && " 🏏"}
-                            {stats.isOut && <span className="text-[10px] text-red-500 font-normal ml-1.5">(out)</span>}
-                          </span>
-                          <div className="flex gap-4 font-mono text-zinc-900">
-                            <span className="w-8 text-right font-bold">{stats.runs}</span>
-                            <span className="w-8 text-right text-zinc-500">{stats.balls}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {battingPlayers.filter(p => {
-                      const stats = getStat(p._id);
-                      return stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== match.currStriker?._id && p._id !== match.currNonStriker?._id;
-                    }).length > 0 && (
-                      <div className="px-3 py-2 bg-zinc-50/40 text-[10px] text-zinc-500">
-                        <strong>Yet to bat: </strong>
-                        {battingPlayers
-                          .filter(p => {
-                            const stats = getStat(p._id);
-                            return stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== match.currStriker?._id && p._id !== match.currNonStriker?._id;
-                          })
-                          .map(p => p.name)
-                          .join(", ")}
+                    </span>
+                  </div>
+                  <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
+                    <div className="bg-zinc-55 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-550">
+                      <span>Batsman</span>
+                      <div className="flex gap-4 font-mono">
+                        <span className="w-8 text-right">R</span>
+                        <span className="w-8 text-right">B</span>
                       </div>
-                    )}
+                    </div>
+                    <div className="divide-y divide-zinc-100 bg-white">
+                      {selectedBattingPlayers.map((p) => {
+                        const stats = getStat(p._id);
+                        if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== activeStrikerId && p._id !== activeNonStrikerId) {
+                          return null; // Not batted yet
+                        }
+                        const isStriker = p._id === activeStrikerId;
+                        const isNonStriker = p._id === activeNonStrikerId;
+                        return (
+                          <div key={p._id} className={`px-3 py-2 flex justify-between items-center ${isStriker || isNonStriker ? "bg-brand-secondary/35 font-semibold" : ""}`}>
+                            <span className="font-semibold text-zinc-700 flex items-center gap-1">
+                              {p.name}
+                              {isStriker && <span>🏏</span>}
+                              {stats.isOut && <span className="text-[10px] text-red-500 font-normal ml-1.5">(out)</span>}
+                            </span>
+                            <div className="flex gap-4 font-mono text-zinc-900">
+                              <span className="w-8 text-right font-bold">{stats.runs}</span>
+                              <span className="w-8 text-right text-zinc-500">{stats.balls}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {selectedBattingPlayers.filter(p => {
+                        const stats = getStat(p._id);
+                        return stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== activeStrikerId && p._id !== activeNonStrikerId;
+                      }).length > 0 && (
+                        <div className="px-3 py-2 bg-zinc-50/40 text-[10px] text-zinc-500 leading-relaxed border-t border-zinc-200">
+                          <strong>Yet to bat: </strong>
+                          {selectedBattingPlayers
+                            .filter(p => {
+                              const stats = getStat(p._id);
+                              return stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== activeStrikerId && p._id !== activeNonStrikerId;
+                            })
+                            .map(p => p.name)
+                            .join(", ")}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Bowling Card */}
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-450 mb-2.5">
-                  Bowling Scorecard ({match.bowlingTeam?.name})
-                </h4>
-                <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
-                  <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-550">
-                    <span>Bowler</span>
-                    <div className="flex gap-4 font-mono">
-                      <span className="w-8 text-right">O</span>
-                      <span className="w-8 text-right">R</span>
-                      <span className="w-8 text-right">W</span>
+                {/* Bowling Card */}
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-450 mb-2.5">
+                    Bowling Scorecard ({!isViewingSecondInnings ? match.battingTeam?.name : match.bowlingTeam?.name})
+                  </h4>
+                  <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
+                    <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-550">
+                      <span>Bowler</span>
+                      <div className="flex gap-4 font-mono">
+                        <span className="w-8 text-right">O</span>
+                        <span className="w-8 text-right">R</span>
+                        <span className="w-8 text-right">W</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="divide-y divide-zinc-100">
-                    {bowlingPlayers.map((p) => {
-                      const stats = getStat(p._id);
-                      if (stats.legalBallsBowled === 0 && p._id !== match.currBowler?._id) {
-                        return null; // Not bowled yet
-                      }
-                      const isBowler = p._id === match.currBowler?._id;
-                      const ovs = `${Math.floor(stats.legalBallsBowled / 6)}.${stats.legalBallsBowled % 6}`;
-                      return (
-                        <div key={p._id} className={`px-3 py-2 flex justify-between items-center ${isBowler ? "bg-brand-secondary/25" : ""}`}>
-                          <span className="font-semibold text-zinc-700">{p.name}</span>
-                          <div className="flex gap-4 font-mono text-zinc-900">
-                            <span className="w-8 text-right text-zinc-550">{ovs}</span>
-                            <span className="w-8 text-right text-zinc-550">{stats.runsConceded}</span>
-                            <span className="w-8 text-right font-bold text-zinc-900">{stats.wicketsTaken}</span>
+                    <div className="divide-y divide-zinc-100 bg-white">
+                      {selectedBowlingPlayers.map((p) => {
+                        const stats = getStat(p._id);
+                        if (stats.legalBallsBowled === 0 && p._id !== activeBowlerId) {
+                          return null; // Not bowled yet
+                        }
+                        const isBowler = p._id === activeBowlerId;
+                        const ovs = `${Math.floor(stats.legalBallsBowled / 6)}.${stats.legalBallsBowled % 6}`;
+                        return (
+                          <div key={p._id} className={`px-3 py-2 flex justify-between items-center ${isBowler ? "bg-brand-secondary/25 font-semibold" : ""}`}>
+                            <span className="font-semibold text-zinc-700">{p.name}</span>
+                            <div className="flex gap-4 font-mono text-zinc-900">
+                              <span className="w-8 text-right text-zinc-550">{ovs}</span>
+                              <span className="w-8 text-right text-zinc-550">{stats.runsConceded}</span>
+                              <span className="w-8 text-right font-bold text-zinc-900">{stats.wicketsTaken}</span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>

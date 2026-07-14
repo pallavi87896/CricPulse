@@ -163,6 +163,7 @@ export async function PATCH(req: NextRequest) {
             action,
             overs,
             newBowler,
+            newBatsmen,
             winner,
             currStriker,
             currNonStriker,
@@ -192,7 +193,7 @@ export async function PATCH(req: NextRequest) {
             return Response.json(match);
         }
 
-        // ---------------- CHANGE BOWLER ----------------
+        // CHANGE BOWLER
         if (action === "changeBowler") {
             if (!mongoose.Types.ObjectId.isValid(newBowler)) {
                 return Response.json(
@@ -231,6 +232,58 @@ export async function PATCH(req: NextRequest) {
 
             return Response.json({
                 msg: "Bowler changed successfully",
+                match,
+            });
+        }
+
+        if (action === "changeBatter") {
+            const match = await Match.findById(id);
+
+            if (!match) {
+                return Response.json(
+                    { msg: "Match not found" },
+                    { status: 404 }
+                );
+            }
+
+            if (currStriker) {
+                if (!mongoose.Types.ObjectId.isValid(currStriker)) {
+                    return Response.json(
+                        { msg: "Invalid striker ID" },
+                        { status: 400 }
+                    );
+                }
+                const batter = await Player.findById(currStriker);
+                if (!batter) {
+                    return Response.json(
+                        { msg: "Striker not found" },
+                        { status: 404 }
+                    );
+                }
+                match.currStriker = currStriker;
+            }
+
+            if (currNonStriker) {
+                if (!mongoose.Types.ObjectId.isValid(currNonStriker)) {
+                    return Response.json(
+                        { msg: "Invalid non-striker ID" },
+                        { status: 400 }
+                    );
+                }
+                const batter = await Player.findById(currNonStriker);
+                if (!batter) {
+                    return Response.json(
+                        { msg: "Non-striker not found" },
+                        { status: 404 }
+                    );
+                }
+                match.currNonStriker = currNonStriker;
+            }
+
+            await match.save();
+
+            return Response.json({
+                msg: "Batter changed successfully",
                 match,
             });
         }

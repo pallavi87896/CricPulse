@@ -3,6 +3,11 @@ import { verifyToken } from "@/lib/auth";
 
 export async function middleware(req:NextRequest){
 
+    const { pathname } = req.nextUrl;
+    if (pathname === "/admin/login") {
+        return NextResponse.next();
+    }
+
     try{
     const token = req.cookies.get("admin_token")?.value;
 

@@ -12,6 +12,8 @@ import { BallEventType } from "@/types/ballEventType";
 import { CommentType } from "@/types/commentType";
 import { PlayerStatsType } from "@/types/playerStatsType";
 import { PlayerType } from "@/types/playerType";
+import Loader from "@/components/Loader";
+import TeamLogo from "@/components/TeamLogo";
 
 export default function LiveMatchesPage() {
   // Active scoring match state
@@ -94,7 +96,6 @@ export default function LiveMatchesPage() {
     fetchMatches();
   }, []);
 
-  // Prepopulate starter setup states when players load
   useEffect(() => {
     if (battingPlayers.length > 0) {
       setStartStrikerId(battingPlayers[0]?._id || "");
@@ -119,7 +120,12 @@ export default function LiveMatchesPage() {
   const [isBowlerModalOpen, setIsBowlerModalOpen] = useState(false);
   const [newBowlerId, setNewBowlerId] = useState("");
 
-  // End Innings Modal State (Now handled inline/manually if required)
+  // Change Batsman Modal State
+  const [isBatsmanModalOpen, setIsBatsmanModalOpen] = useState(false);
+  const [newStrikerId, setNewStrikerId] = useState("");
+  const [newNonStrikerId, setNewNonStrikerId] = useState("");
+
+  // End Innings Modal State
   const [isInningsModalOpen, setIsInningsModalOpen] = useState(false);
   const [innStriker, setInnStriker] = useState("");
   const [innNonStriker, setInnNonStriker] = useState("");
@@ -129,12 +135,30 @@ export default function LiveMatchesPage() {
   const [isEndMatchModalOpen, setIsEndMatchModalOpen] = useState(false);
   const [winnerId, setWinnerId] = useState("");
 
+  // Extras Modal State
+  const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
+  const [extraType, setExtraType] = useState<"Wide" | "NoBall" | "Bye" | "LegBye">("Wide");
+  const [extraBatsmanRuns, setExtraBatsmanRuns] = useState(0);
+  const [extraExtraRuns, setExtraExtraRuns] = useState(0);
+
+  // Scorecard selected innings view state
+  const [selectedInnings, setSelectedInnings] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    if (match) {
+      setSelectedInnings(match.innings as 1 | 2);
+    }
+  }, [match?.innings]);
+
   // Custom commentary text input state
   const [customComment, setCustomComment] = useState("");
 
-  // Stats lookups
+  // Stats
+  //prevents crash and find player stats to display on score board
   const getStat = (playerId: string) => {
-    if (!playerId) return { runs: 0, balls: 0, wicketsTaken: 0, legalBallsBowled: 0, runsConceded: 0, isOut: false };
+    if (!playerId) return { runs: 0, balls: 0, wicketsTaken: 0, legalBallsBowled: 0, runsConceded: 0, isOut: false,
+      wicketType: ""
+     };
     return (
       scorecard.find((ps) => ps.player?._id === playerId) || {
         runs: 0,
@@ -143,6 +167,7 @@ export default function LiveMatchesPage() {
         legalBallsBowled: 0,
         runsConceded: 0,
         isOut: false,
+        wicketType:""
       }
     );
   };
@@ -170,16 +195,39 @@ export default function LiveMatchesPage() {
   const bowlerOversFractions = bowlerStat.legalBallsBowled / 6;
   const bowlerEcon = bowlerOversFractions > 0 ? (bowlerStat.runsConceded / bowlerOversFractions).toFixed(2) : "0.00";
 
+  // Innings-specific scorecard variables
+  const isSecondInnings = match?.innings === 2;
+  const isViewingSecondInnings = !isSecondInnings || selectedInnings === 2;
+
+  //swapping players
+  const selectedBattingPlayers = !isSecondInnings || !isViewingSecondInnings ? bowlingPlayers : battingPlayers;
+  const selectedBowlingPlayers = !isSecondInnings || !isViewingSecondInnings ? battingPlayers : bowlingPlayers;
+
+  //if we are viewing a completed innings we need to hide the ball n bat emoji later n as well add the ids for players in the active inning
+  const activeStrikerId = !isViewingSecondInnings ? "" : (match?.currStriker?._id ?? "");
+  const activeNonStrikerId = !isViewingSecondInnings ? "" : (match?.currNonStriker?._id ?? "");
+  const activeBowlerId = !isViewingSecondInnings ? "" : (match?.currBowler?._id ?? "");
+
+  const innings1Wickets = scorecard.filter(ps => 
+    bowlingPlayers.some(p => p._id === ps.player?._id) && ps.isOut
+  ).length;
+
+  const innings1Balls = battingPlayers.reduce((acc, p) => {
+    const stats = scorecard.find(ps => ps.player?._id === p._id);
+    return acc + (stats?.legalBallsBowled ?? 0);
+  }, 0);
+  const innings1OversStr = `${Math.floor(innings1Balls / 6)}.${innings1Balls % 6}`;
+
   // Over History Calculation
   const currentMatchEvents = recentBalls;
   const recentBallsList = currentMatchEvents.slice(-6); // last 6 balls
 
   // Group events by overs for over history
   const oversHistory: { number: number; runs: number; wickets: number; balls: any[] }[] = [];
-  let tempBalls: any[] = [];
-  let tempRuns = 0;
-  let tempWickets = 0;
-  let currentLegalBalls = 0;
+  let tempBalls: any[] = [];//array of balls in an over
+  let tempRuns = 0;//total runs
+  let tempWickets = 0;//total wickets
+  let currentLegalBalls = 0;//counts total legal balls
 
   currentMatchEvents.forEach((ev) => {
     let isLegal = ev.ballType === "Normal" || ev.ballType === "Bye" || ev.ballType === "LegBye";
@@ -192,6 +240,8 @@ export default function LiveMatchesPage() {
     else if (ev.ballType === "Bye" || ev.ballType === "LegBye") tempRuns += ev.extraRuns;
 
     if (ev.wicket) tempWickets += 1;
+
+    //Whenever currentLegalBalls is divisible by 6, it saves the compiled over stats into oversHistory and wipes the temporary counters clean so the next ball event starts a new over.
 
     if (isLegal) {
       currentLegalBalls += 1;
@@ -208,6 +258,7 @@ export default function LiveMatchesPage() {
       }
     }
   });
+
   
   // If unfinished over is active
   if (tempBalls.length > 0) {
@@ -270,15 +321,40 @@ export default function LiveMatchesPage() {
     });
   };
 
-  const handleScoreExtra = async (type: "Wide" | "NoBall" | "Bye" | "LegBye", runs: number = 0) => {
+  //for wide we are already taking a plus one
+
+  const handleScoreExtra = async (type: "Wide" | "NoBall" | "Bye" | "LegBye", runs: number = 1) => {
     if (!match) return;
+    const isWideOrNoBall = type === "Wide" || type === "NoBall";
     await postBallEvent({
       match: match._id,
       ballType: type,
-      batsmanRuns: type === "NoBall" ? runs : 0,
+      batsmanRuns: 0,
       wicket: false,
-      extraRuns: type === "Wide" || type === "NoBall" ? runs + 1 : runs
+      extraRuns: isWideOrNoBall ? runs - 1 : runs
     });
+  };
+
+  const handleOpenExtra = (type: "Wide" | "NoBall" | "Bye" | "LegBye") => {
+    setExtraType(type);
+    setExtraBatsmanRuns(0);
+    setExtraExtraRuns(type === "Bye" || type === "LegBye" ? 1 : 0);
+    setIsExtraModalOpen(true);
+  };
+
+  const handleSaveExtra = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!match) return;
+
+    await postBallEvent({
+      match: match._id,
+      ballType: extraType,
+      batsmanRuns: extraType === "NoBall" ? extraBatsmanRuns : 0,
+      wicket: false,
+      extraRuns: extraExtraRuns,
+    });
+
+    setIsExtraModalOpen(false);
   };
 
   // Open Wicket Dialog
@@ -346,6 +422,47 @@ export default function LiveMatchesPage() {
     }
 
     setIsBowlerModalOpen(false);
+    await fetchLiveMatches(selectedMatchId);
+  };
+
+  // Open Batsman Modal
+  const handleOpenBatsmanChange = () => {
+    if (!match) return;
+    setNewStrikerId(match.currStriker?._id || "");
+    setNewNonStrikerId(match.currNonStriker?._id || "");
+    setIsBatsmanModalOpen(true);
+  };
+
+  const handleSaveBatsmanChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!match) return;
+    
+    if (newStrikerId === newNonStrikerId && newStrikerId !== "") {
+      alert("Striker and Non-Striker cannot be the same player!");
+      return;
+    }
+
+    const res = await fetch("/api/match", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: match._id,
+        action: "changeBatter",
+        currStriker: newStrikerId,
+        currNonStriker: newNonStrikerId,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.msg);
+      return;
+    }
+
+    setIsBatsmanModalOpen(false);
     await fetchLiveMatches(selectedMatchId);
   };
 
@@ -511,8 +628,12 @@ export default function LiveMatchesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-100px">
-        <div className="animate-spin text-brand-accent rounded-full h-10 w-10 border-b-2 border-current"></div>
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Live Match Scoring" description="Manage active matches and score live deliveries." />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Loader variant="card" className="lg:col-span-2" />
+          <Loader variant="card" />
+        </div>
       </div>
     );
   }
@@ -608,7 +729,7 @@ export default function LiveMatchesPage() {
           <div className="bg-white border border-zinc-200 border-t-4 border-t-brand-accent rounded-lg text-zinc-900 p-5 flex flex-col gap-4 shadow-xs relative overflow-hidden">
             <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{match.battingTeam?.logo ?? "🏏"}</span>
+                <TeamLogo logo={match.battingTeam?.logo} name={match.battingTeam?.name} size="sm" />
                 <div>
                   <h2 className="text-lg font-bold text-zinc-900">{match.battingTeam?.name ?? "Batting Team"}</h2>
                   <p className="text-[10px] text-brand-accent font-bold uppercase tracking-wider">
@@ -658,6 +779,17 @@ export default function LiveMatchesPage() {
                   <span className="text-[9px] font-bold text-brand-accent uppercase tracking-wider">Striker 🏏</span>
                   <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currStriker?.name ?? "Not Selected"}</h4>
                 </div>
+                {isInitialized && (
+                  <button
+                    onClick={handleOpenBatsmanChange}
+                    title="Change Striker"
+                    className="text-zinc-400 hover:text-brand-accent cursor-pointer p-1 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                )}
               </div>
               <div className="flex justify-between items-baseline mt-4">
                 <span className="text-xl font-bold font-mono text-zinc-900">{match.currStriker ? strikerStat.runs : "-"}</span>
@@ -674,6 +806,17 @@ export default function LiveMatchesPage() {
                   <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Non-Striker</span>
                   <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currNonStriker?.name ?? "Not Selected"}</h4>
                 </div>
+                {isInitialized && (
+                  <button
+                    onClick={handleOpenBatsmanChange}
+                    title="Change Non-Striker"
+                    className="text-zinc-400 hover:text-brand-accent cursor-pointer p-1 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                )}
               </div>
               <div className="flex justify-between items-baseline mt-4">
                 <span className="text-xl font-bold font-mono text-zinc-700">{match.currNonStriker ? nonStrikerStat.runs : "-"}</span>
@@ -788,17 +931,17 @@ export default function LiveMatchesPage() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2 block">Extras</span>
                     <div className="grid grid-cols-4 gap-2">
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700" onClick={() => handleScoreExtra("Wide")}>
-                        Wide (+1)
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("Wide")}>
+                        Wide
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700" onClick={() => handleScoreExtra("NoBall")}>
-                        No Ball (+1)
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("NoBall")}>
+                        No Ball
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700" onClick={() => handleScoreExtra("Bye")}>
-                        Bye (+1)
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("Bye")}>
+                        Bye
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700" onClick={() => handleScoreExtra("LegBye")}>
-                        Leg Bye (+1)
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("LegBye")}>
+                        Leg Bye
                       </Button>
                     </div>
                   </div>
@@ -875,12 +1018,48 @@ export default function LiveMatchesPage() {
             </div>
           </Card>
 
-          {/* 2. Compact Scorecard Preview */}
-          <Card title="Scorecard Preview" subtitle="Current batsman and bowler card records">
+          <Card 
+            title="Scorecard Preview" 
+            subtitle="Batsman and bowler card records"
+            extra={
+              match.innings === 2 && (
+                <div className="flex gap-1 bg-zinc-100 p-0.5 rounded-md border border-zinc-200">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInnings(1)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      selectedInnings === 1 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
+                    }`}
+                  >
+                    Inn 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedInnings(2)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      selectedInnings === 2 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
+                    }`}
+                  >
+                    Inn 2
+                  </button>
+                </div>
+              )
+            }
+          >
             <div className="flex flex-col gap-4">
               {/* Batting Card */}
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 block mb-1.5">Batting Scorecard</span>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-550">
+                    Batting Scorecard
+                  </span>
+                  <span className="text-[10px] font-bold text-zinc-500">
+                    {!isViewingSecondInnings 
+                      ? `${match.target > 0 ? match.target - 1 : 0}/${innings1Wickets} (${innings1OversStr} ov)`
+                      : `${score}/${wickets} (${oversStr} ov)`
+                    }
+                  </span>
+                </div>
                 <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
                   <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-1.5 flex justify-between font-semibold text-zinc-550">
                     <span>Batsman</span>
@@ -890,14 +1069,14 @@ export default function LiveMatchesPage() {
                     </div>
                   </div>
                   <div className="divide-y divide-zinc-100">
-                    {battingPlayers.map((p) => {
+                    {selectedBattingPlayers.map((p) => {
                       const stats = getStat(p._id);
-                      if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== match.currStriker?._id && p._id !== match.currNonStriker?._id) {
+                      if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== activeStrikerId && p._id !== activeNonStrikerId) {
                         return null; // Not batted yet
                       }
                       
-                      const isStriker = p._id === match.currStriker?._id;
-                      const isNonStriker = p._id === match.currNonStriker?._id;
+                      const isStriker = p._id === activeStrikerId;
+                      const isNonStriker = p._id === activeNonStrikerId;
 
                       return (
                         <div key={p._id} className={`px-3 py-1.5 flex justify-between items-center ${isStriker || isNonStriker ? "bg-brand-secondary/30" : ""}`}>
@@ -930,12 +1109,12 @@ export default function LiveMatchesPage() {
                     </div>
                   </div>
                   <div className="divide-y divide-zinc-100">
-                    {bowlingPlayers.map((p) => {
+                    {selectedBowlingPlayers.map((p) => {
                       const stats = getStat(p._id);
-                      if (stats.legalBallsBowled === 0 && p._id !== match.currBowler?._id) {
+                      if (stats.legalBallsBowled === 0 && p._id !== activeBowlerId) {
                         return null; // Not bowled yet
                       }
-                      const isBowler = p._id === match.currBowler?._id;
+                      const isBowler = p._id === activeBowlerId;
                       const ovs = `${Math.floor(stats.legalBallsBowled / 6)}.${stats.legalBallsBowled % 6}`;
 
                       return (
@@ -1056,6 +1235,46 @@ export default function LiveMatchesPage() {
         </form>
       </Modal>
 
+      {/* Change Batsmen Modal */}
+      <Modal 
+        isOpen={isBatsmanModalOpen} 
+        onClose={() => setIsBatsmanModalOpen(false)} 
+        title="Change Active Batsmen" 
+        footer={<><Button variant="secondary" onClick={() => setIsBatsmanModalOpen(false)}>Cancel</Button><Button variant="primary" type="submit" form="change-batsman-form">Apply Changes</Button></>}
+      >
+        <form id="change-batsman-form" onSubmit={handleSaveBatsmanChange} className="flex flex-col gap-4">
+          <Select
+            label="Select Active Striker"
+            options={[
+              ...(match?.currStriker ? [{ value: match.currStriker._id, label: `${match.currStriker.name} (Current Striker)` }] : []),
+              ...battingPlayers
+                .filter((p) => {
+                  const stat = getStat(p._id);
+                  return !stat.isOut && p._id !== match?.currStriker?._id && p._id !== match?.currNonStriker?._id;
+                })
+                .map((p) => ({ value: p._id, label: p.name })),
+            ]}
+            value={newStrikerId}
+            onChange={(e) => setNewStrikerId(e.target.value)}
+          />
+
+          <Select
+            label="Select Active Non-Striker"
+            options={[
+              ...(match?.currNonStriker ? [{ value: match.currNonStriker._id, label: `${match.currNonStriker.name} (Current Non-Striker)` }] : []),
+              ...battingPlayers
+                .filter((p) => {
+                  const stat = getStat(p._id);
+                  return !stat.isOut && p._id !== match?.currStriker?._id && p._id !== match?.currNonStriker?._id;
+                })
+                .map((p) => ({ value: p._id, label: p.name })),
+            ]}
+            value={newNonStrikerId}
+            onChange={(e) => setNewNonStrikerId(e.target.value)}
+          />
+        </form>
+      </Modal>
+
       {/* Innings Break Setup Modal */}
       <Modal isOpen={isInningsModalOpen} onClose={() => setIsInningsModalOpen(false)} title="Start New Innings Break Setup" footer={<><Button variant="secondary" onClick={() => setIsInningsModalOpen(false)}>Cancel</Button><Button variant="primary" type="submit" form="innings-form">Start Innings</Button></>}>
         <form id="innings-form" onSubmit={handleSaveInningsBreak} className="flex flex-col gap-4">
@@ -1096,6 +1315,112 @@ export default function LiveMatchesPage() {
             value={winnerId}
             onChange={(e) => setWinnerId(e.target.value)}
           />
+        </form>
+      </Modal>
+
+      {/* Extras Modal */}
+      <Modal 
+        isOpen={isExtraModalOpen} 
+        onClose={() => setIsExtraModalOpen(false)} 
+        title={`Score Extra: ${extraType === "NoBall" ? "No Ball" : extraType === "LegBye" ? "Leg Bye" : extraType}`} 
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsExtraModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" type="submit" form="extra-form">Score Extra Ball</Button>
+          </>
+        }
+      >
+        <form id="extra-form" onSubmit={handleSaveExtra} className="flex flex-col gap-5">
+          {extraType === "NoBall" && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <span className="text-xs font-bold text-zinc-550 block mb-2">Runs Off Bat (Credited to Batsman)</span>
+                <div className="grid grid-cols-6 gap-2">
+                  {[0, 1, 2, 3, 4, 6].map((run) => (
+                    <button
+                      key={run}
+                      type="button"
+                      onClick={() => setExtraBatsmanRuns(run)}
+                      className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
+                        extraBatsmanRuns === run
+                          ? "bg-brand-accent text-white border-brand-accent"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                      }`}
+                    >
+                      {run}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-bold text-zinc-550 block mb-2">Additional Extra Runs (Byes/Leg-byes on No Ball)</span>
+                <div className="grid grid-cols-5 gap-2">
+                  {[0, 1, 2, 3, 4].map((run) => (
+                    <button
+                      key={run}
+                      type="button"
+                      onClick={() => setExtraExtraRuns(run)}
+                      className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
+                        extraExtraRuns === run
+                          ? "bg-brand-accent text-white border-brand-accent"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                      }`}
+                    >
+                      {run}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {extraType === "Wide" && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-bold text-zinc-550 block mb-2">Additional Runs Ran/Boundary (Excluding +1 wide penalty)</span>
+              <div className="grid grid-cols-5 gap-2">
+                {[0, 1, 2, 3, 4].map((run) => (
+                  <button
+                    key={run}
+                    type="button"
+                    onClick={() => setExtraExtraRuns(run)}
+                    className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
+                      extraExtraRuns === run
+                        ? "bg-brand-accent text-white border-brand-accent"
+                        : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {run}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-zinc-400 italic mt-1 font-medium">
+                E.g. select 4 if the wide ball went past the keeper to the boundary (totaling 5 wides).
+              </p>
+            </div>
+          )}
+
+          {(extraType === "Bye" || extraType === "LegBye") && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-bold text-zinc-550 block mb-2">Runs Scored</span>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map((run) => (
+                  <button
+                    key={run}
+                    type="button"
+                    onClick={() => setExtraExtraRuns(run)}
+                    className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
+                      extraExtraRuns === run
+                        ? "bg-brand-accent text-white border-brand-accent"
+                        : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {run}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </form>
       </Modal>
     </div>

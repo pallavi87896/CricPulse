@@ -24,8 +24,9 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2 group">
               {/* Cricket Inspired Brand Icon / Pulse Logo */}
               <div className="bg-[var(--color-brand-secondary)] p-2 rounded-lg border border-[var(--color-brand-primary)]/20 text-[var(--color-brand-accent)]">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" className="opacity-30" />
+                  <path d="M3 12h3.5l1.5-3.5L10 16.5l2-9.5 2 11.5 1.5-5.5L19 12h2" />
                 </svg>
               </div>
               <span className="font-sans font-extrabold text-xl tracking-tight text-zinc-900">

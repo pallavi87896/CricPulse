@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { TeamType } from "@/types/teamType";
 import PageHeader from "@/components/PageHeader";
 import SimpleTable from "@/components/SimpleTable";
+import TeamLogo from "@/components/TeamLogo";
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<TeamType[]>([]);
@@ -70,8 +71,8 @@ export default function TeamsPage() {
         {filteredTeams.map((team) => (
           <tr key={team._id} className="hover:bg-zinc-50/75 transition-colors group">
             {/* Logo Display */}
-            <td className="px-6 py-4 whitespace-nowrap text-3xl w-28 text-center select-none bg-zinc-50/30 group-hover:bg-zinc-50 border-r border-zinc-100">
-              {team.logo || "🏏"}
+            <td className="px-6 py-3.5 whitespace-nowrap w-28 text-center select-none bg-zinc-50/30 group-hover:bg-zinc-50 border-r border-zinc-100 flex items-center justify-center">
+              <TeamLogo logo={team.logo} name={team.name} size="sm" />
             </td>
             
             {/* Club Name */}

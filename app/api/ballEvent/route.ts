@@ -98,8 +98,13 @@ export async function  POST(req:NextRequest){
                 // If this wicket will result in all out (wickets + 1 >= 10) or overs are ending, we don't strictly require newBatsman.
                 // We check if newBatsman is provided. If so, validate it. If not, only allow if the innings/match is ending.
                 const nextWickets = existingMatch.wickets + 1;
-                const isAllOut = nextWickets >= 10;
+
+                const battingPlayersCount = await Player.countDocuments({ team: existingMatch.battingTeam });
+
+                const isAllOut = battingPlayersCount > 0 ? (nextWickets >= battingPlayersCount - 1) : (nextWickets >= 10);
+
                 const isLegalDelivery = (ballType === "Normal" || ballType === "Bye" || ballType === "LegBye");
+                
                 const willOversEnd = isLegalDelivery && (existingMatch.legalBalls + 1 >= existingMatch.overs * 6);
                 const inningsEnding = isAllOut || willOversEnd;
 
@@ -266,8 +271,10 @@ export async function  POST(req:NextRequest){
 
             
             if(existingMatch.innings==1){
+                const battingPlayersCount = await Player.countDocuments({ team: existingMatch.battingTeam });
+                const isAllOut = battingPlayersCount > 0 ? (existingMatch.wickets >= battingPlayersCount - 1) : (existingMatch.wickets >= 10);
 
-                if(existingMatch.wickets === 10 || existingMatch.legalBalls >= existingMatch.overs*6 )
+                if(isAllOut || existingMatch.legalBalls >= existingMatch.overs*6 )
                 {
                     startSecondInnings(existingMatch);
 
@@ -301,7 +308,10 @@ export async function  POST(req:NextRequest){
                 }
             }
             if(existingMatch.innings===2){
-                if (existingMatch.wickets === 10 || 
+                const battingPlayersCount = await Player.countDocuments({ team: existingMatch.battingTeam });
+                const isAllOut = battingPlayersCount > 0 ? (existingMatch.wickets >= battingPlayersCount - 1) : (existingMatch.wickets >= 10);
+
+                if (isAllOut || 
                     existingMatch.legalBalls >= existingMatch.overs*6 || existingMatch.score >= existingMatch.target){
                     
                     finishMatch(existingMatch);
