@@ -299,16 +299,18 @@ export default function MatchPage() {
               </td>
               <td className="px-6 py-4 whitespace-nowrap w-48">
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditMatch(match);
-                    }}
-                  >
-                    Edit
-                  </Button>
+                  {match.status !== "Ended" && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditMatch(match);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  )}
                   <Button
                     variant="danger"
                     size="sm"

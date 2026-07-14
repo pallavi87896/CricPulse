@@ -200,11 +200,9 @@ export default function LiveMatchesPage() {
   const isSecondInnings = match?.innings === 2;
   const isViewingSecondInnings = !isSecondInnings || selectedInnings === 2;
 
-  //swapping players
-  const selectedBattingPlayers = !isSecondInnings || !isViewingSecondInnings ? bowlingPlayers : battingPlayers;
-  const selectedBowlingPlayers = !isSecondInnings || !isViewingSecondInnings ? battingPlayers : bowlingPlayers;
+  const selectedBattingPlayers = isSecondInnings && selectedInnings === 1 ? bowlingPlayers : battingPlayers;
+  const selectedBowlingPlayers = isSecondInnings && selectedInnings === 1 ? battingPlayers : bowlingPlayers;
 
-  //if we are viewing a completed innings we need to hide the ball n bat emoji later n as well add the ids for players in the active inning
   const activeStrikerId = !isViewingSecondInnings ? "" : (match?.currStriker?._id ?? "");
   const activeNonStrikerId = !isViewingSecondInnings ? "" : (match?.currNonStriker?._id ?? "");
   const activeBowlerId = !isViewingSecondInnings ? "" : (match?.currBowler?._id ?? "");
@@ -709,15 +707,7 @@ export default function LiveMatchesPage() {
                 ))}
               </select>
             )}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                window.location.href = "/matches";
-              }}
-            >
-              Configure Matches
-            </Button>
+
           </div>
         }
       />

@@ -13,6 +13,8 @@ import { TeamType } from "@/types/teamType";
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<TeamType[]>([]);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [selectedTeamForSquad, setSelectedTeamForSquad] = useState<TeamType | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -45,8 +47,21 @@ export default function TeamsPage() {
     }
   };
 
+  const fetchPlayers = async () => {
+    try {
+      const res = await fetch("/api/player");
+      if (res.ok) {
+        const data = await res.json();
+        setPlayers(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchTeams();
+    fetchPlayers();
   }, []);
 
   const handleAdd = () => {
@@ -210,7 +225,11 @@ export default function TeamsPage() {
           isEmpty={filteredTeams.length === 0}
         >
           {filteredTeams.map((team) => (
-            <tr key={team._id} className="hover:bg-zinc-50/75 transition-colors group">
+            <tr
+              key={team._id}
+              onClick={() => setSelectedTeamForSquad(team)}
+              className="hover:bg-zinc-50/75 transition-colors cursor-pointer group"
+            >
               {/* Logo Display */}
               <td className="px-6 py-3 whitespace-nowrap w-36 text-center select-none bg-zinc-50/30 group-hover:bg-zinc-50 border-r border-zinc-100">
                 <TeamLogo logo={team.logo} name={team.name} size="sm" />
@@ -224,10 +243,24 @@ export default function TeamsPage() {
               {/* Edit/Delete Actions */}
               <td className="px-6 py-3 whitespace-nowrap w-48">
                 <div className="flex items-center gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => handleEdit(team)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(team);
+                    }}
+                  >
                     Edit
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(team._id)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(team._id);
+                    }}
+                  >
                     Delete
                   </Button>
                 </div>
@@ -333,6 +366,37 @@ export default function TeamsPage() {
         title="Disband Team Squad"
         message="Are you sure you want to delete this team squad? This will remove them from the tournament registration database. Players affiliated with this team will lose their team association."
       />
+
+      {/* Squad Modal */}
+      <Modal
+        isOpen={!!selectedTeamForSquad}
+        onClose={() => setSelectedTeamForSquad(null)}
+        title={selectedTeamForSquad ? `${selectedTeamForSquad.name} - Squad Roster` : "Squad"}
+        size="md"
+      >
+        <div className="flex flex-col gap-4 text-left">
+          {players.filter((p) => {
+            const teamId = p.team?._id || (typeof p.team === "string" ? p.team : "");
+            return selectedTeamForSquad && teamId === selectedTeamForSquad._id;
+          }).length === 0 ? (
+            <p className="text-zinc-500 text-xs italic text-center py-6">No players registered under this team squad yet.</p>
+          ) : (
+            <div className="border border-zinc-200 rounded-xl overflow-hidden divide-y divide-zinc-100 bg-white">
+              {players.filter((p) => {
+                const teamId = p.team?._id || (typeof p.team === "string" ? p.team : "");
+                return selectedTeamForSquad && teamId === selectedTeamForSquad._id;
+              }).map((player) => (
+                <div key={player._id} className="p-3 flex justify-between items-center text-xs">
+                  <span className="font-bold text-zinc-800">{player.name}</span>
+                  <span className="font-semibold text-zinc-500 uppercase bg-zinc-100 px-2 py-0.5 rounded text-[10px]">
+                    {player.role || "All-Rounder"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

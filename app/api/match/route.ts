@@ -432,6 +432,11 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
+        // Cascade delete all players associated with both teams of this match
+        await Player.deleteMany({
+            team: { $in: [deletedMatch.teamA, deletedMatch.teamB] }
+        });
+
         return Response.json({
             msg: "Match deleted successfully",
         });

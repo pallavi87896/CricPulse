@@ -124,8 +124,8 @@ export default function MatchViewPage({ params }: MatchViewProps) {
   const isSecondInnings = match.innings === 2;
   const isViewingSecondInnings = !isSecondInnings || selectedInnings === 2;
 
-  const selectedBattingPlayers = !isSecondInnings || !isViewingSecondInnings ? bowlingPlayers : battingPlayers;
-  const selectedBowlingPlayers = !isSecondInnings || !isViewingSecondInnings ? battingPlayers : bowlingPlayers;
+  const selectedBattingPlayers = isSecondInnings && selectedInnings === 1 ? bowlingPlayers : battingPlayers;
+  const selectedBowlingPlayers = isSecondInnings && selectedInnings === 1 ? battingPlayers : bowlingPlayers;
 
   const activeStrikerId = !isViewingSecondInnings ? "" : (match.currStriker?._id ?? "");
   const activeNonStrikerId = !isViewingSecondInnings ? "" : (match.currNonStriker?._id ?? "");
