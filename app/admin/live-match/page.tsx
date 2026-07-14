@@ -44,10 +44,10 @@ export default function LiveMatchesPage() {
       }
 
       const data = await res.json();
-      
+
       const live = data.filter((m: MatchType) => m.status === "Live");
       const upcoming = data.filter((m: MatchType) => m.status === "Upcoming");
-      
+
       setLiveMatches(live);
       setUpcomingMatches(upcoming);
 
@@ -156,9 +156,10 @@ export default function LiveMatchesPage() {
   // Stats
   //prevents crash and find player stats to display on score board
   const getStat = (playerId: string) => {
-    if (!playerId) return { runs: 0, balls: 0, wicketsTaken: 0, legalBallsBowled: 0, runsConceded: 0, isOut: false,
+    if (!playerId) return {
+      runs: 0, balls: 0, wicketsTaken: 0, legalBallsBowled: 0, runsConceded: 0, isOut: false,
       wicketType: ""
-     };
+    };
     return (
       scorecard.find((ps) => ps.player?._id === playerId) || {
         runs: 0,
@@ -167,7 +168,7 @@ export default function LiveMatchesPage() {
         legalBallsBowled: 0,
         runsConceded: 0,
         isOut: false,
-        wicketType:""
+        wicketType: ""
       }
     );
   };
@@ -208,7 +209,7 @@ export default function LiveMatchesPage() {
   const activeNonStrikerId = !isViewingSecondInnings ? "" : (match?.currNonStriker?._id ?? "");
   const activeBowlerId = !isViewingSecondInnings ? "" : (match?.currBowler?._id ?? "");
 
-  const innings1Wickets = scorecard.filter(ps => 
+  const innings1Wickets = scorecard.filter(ps =>
     bowlingPlayers.some(p => p._id === ps.player?._id) && ps.isOut
   ).length;
 
@@ -232,7 +233,7 @@ export default function LiveMatchesPage() {
   currentMatchEvents.forEach((ev) => {
     let isLegal = ev.ballType === "Normal" || ev.ballType === "Bye" || ev.ballType === "LegBye";
     tempBalls.push(ev);
-    
+
     // Add runs
     if (ev.ballType === "Normal") tempRuns += ev.batsmanRuns + ev.extraRuns;
     else if (ev.ballType === "Wide") tempRuns += 1 + ev.extraRuns;
@@ -259,7 +260,7 @@ export default function LiveMatchesPage() {
     }
   });
 
-  
+
   // If unfinished over is active
   if (tempBalls.length > 0) {
     oversHistory.push({
@@ -362,7 +363,7 @@ export default function LiveMatchesPage() {
     if (!match) return;
     setWicketType("Bowled");
     setOutPlayerId(match.currStriker?._id || "");
-    
+
     // Suggest first player from batting team who hasn't batted yet
     const alreadyBattedIds = scorecard
       .filter((ps) => (ps.runs > 0 || ps.balls > 0 || ps.isOut || ps.player?._id === match.currStriker?._id || ps.player?._id === match.currNonStriker?._id))
@@ -436,7 +437,7 @@ export default function LiveMatchesPage() {
   const handleSaveBatsmanChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!match) return;
-    
+
     if (newStrikerId === newNonStrikerId && newStrikerId !== "") {
       alert("Striker and Non-Striker cannot be the same player!");
       return;
@@ -987,7 +988,7 @@ export default function LiveMatchesPage() {
                   let bg = "bg-zinc-100 text-zinc-800 border-zinc-200";
                   if (val === "W") bg = "bg-red-100 text-red-700 border-red-200 font-bold";
                   else if (val === "4" || val === "6") bg = "bg-brand-secondary text-brand-accent border-brand-primary/45 font-bold";
-                  
+
                   return (
                     <span
                       key={idx}
@@ -1018,8 +1019,8 @@ export default function LiveMatchesPage() {
             </div>
           </Card>
 
-          <Card 
-            title="Scorecard Preview" 
+          <Card
+            title="Scorecard Preview"
             subtitle="Batsman and bowler card records"
             extra={
               match.innings === 2 && (
@@ -1027,18 +1028,16 @@ export default function LiveMatchesPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedInnings(1)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                      selectedInnings === 1 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
-                    }`}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${selectedInnings === 1 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
+                      }`}
                   >
                     Inn 1
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedInnings(2)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
-                      selectedInnings === 2 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
-                    }`}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${selectedInnings === 2 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
+                      }`}
                   >
                     Inn 2
                   </button>
@@ -1054,7 +1053,7 @@ export default function LiveMatchesPage() {
                     Batting Scorecard
                   </span>
                   <span className="text-[10px] font-bold text-zinc-500">
-                    {!isViewingSecondInnings 
+                    {!isViewingSecondInnings
                       ? `${match.target > 0 ? match.target - 1 : 0}/${innings1Wickets} (${innings1OversStr} ov)`
                       : `${score}/${wickets} (${oversStr} ov)`
                     }
@@ -1074,7 +1073,7 @@ export default function LiveMatchesPage() {
                       if (stats.runs === 0 && stats.balls === 0 && !stats.isOut && p._id !== activeStrikerId && p._id !== activeNonStrikerId) {
                         return null; // Not batted yet
                       }
-                      
+
                       const isStriker = p._id === activeStrikerId;
                       const isNonStriker = p._id === activeNonStrikerId;
 
@@ -1236,10 +1235,10 @@ export default function LiveMatchesPage() {
       </Modal>
 
       {/* Change Batsmen Modal */}
-      <Modal 
-        isOpen={isBatsmanModalOpen} 
-        onClose={() => setIsBatsmanModalOpen(false)} 
-        title="Change Active Batsmen" 
+      <Modal
+        isOpen={isBatsmanModalOpen}
+        onClose={() => setIsBatsmanModalOpen(false)}
+        title="Change Active Batsmen"
         footer={<><Button variant="secondary" onClick={() => setIsBatsmanModalOpen(false)}>Cancel</Button><Button variant="primary" type="submit" form="change-batsman-form">Apply Changes</Button></>}
       >
         <form id="change-batsman-form" onSubmit={handleSaveBatsmanChange} className="flex flex-col gap-4">
@@ -1319,10 +1318,10 @@ export default function LiveMatchesPage() {
       </Modal>
 
       {/* Extras Modal */}
-      <Modal 
-        isOpen={isExtraModalOpen} 
-        onClose={() => setIsExtraModalOpen(false)} 
-        title={`Score Extra: ${extraType === "NoBall" ? "No Ball" : extraType === "LegBye" ? "Leg Bye" : extraType}`} 
+      <Modal
+        isOpen={isExtraModalOpen}
+        onClose={() => setIsExtraModalOpen(false)}
+        title={`Score Extra: ${extraType === "NoBall" ? "No Ball" : extraType === "LegBye" ? "Leg Bye" : extraType}`}
         footer={
           <>
             <Button variant="secondary" onClick={() => setIsExtraModalOpen(false)}>Cancel</Button>
@@ -1341,11 +1340,10 @@ export default function LiveMatchesPage() {
                       key={run}
                       type="button"
                       onClick={() => setExtraBatsmanRuns(run)}
-                      className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
-                        extraBatsmanRuns === run
+                      className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraBatsmanRuns === run
                           ? "bg-brand-accent text-white border-brand-accent"
                           : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
-                      }`}
+                        }`}
                     >
                       {run}
                     </button>
@@ -1361,11 +1359,10 @@ export default function LiveMatchesPage() {
                       key={run}
                       type="button"
                       onClick={() => setExtraExtraRuns(run)}
-                      className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
-                        extraExtraRuns === run
+                      className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraExtraRuns === run
                           ? "bg-brand-accent text-white border-brand-accent"
                           : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
-                      }`}
+                        }`}
                     >
                       {run}
                     </button>
@@ -1384,11 +1381,10 @@ export default function LiveMatchesPage() {
                     key={run}
                     type="button"
                     onClick={() => setExtraExtraRuns(run)}
-                    className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
-                      extraExtraRuns === run
+                    className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraExtraRuns === run
                         ? "bg-brand-accent text-white border-brand-accent"
                         : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
-                    }`}
+                      }`}
                   >
                     {run}
                   </button>
@@ -1409,11 +1405,10 @@ export default function LiveMatchesPage() {
                     key={run}
                     type="button"
                     onClick={() => setExtraExtraRuns(run)}
-                    className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${
-                      extraExtraRuns === run
+                    className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraExtraRuns === run
                         ? "bg-brand-accent text-white border-brand-accent"
                         : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
-                    }`}
+                      }`}
                   >
                     {run}
                   </button>
