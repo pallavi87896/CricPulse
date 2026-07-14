@@ -69,7 +69,7 @@ export async function POST(req:Request){
         //store jwt inside cookie
         response.cookies.set("admin_token",token,{
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             sameSite: "lax",
             maxAge: 60*60*24*15,
             path:"/",
