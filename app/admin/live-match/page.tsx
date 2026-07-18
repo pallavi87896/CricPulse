@@ -119,6 +119,7 @@ export default function LiveMatchesPage() {
 
   // Change Bowler Modal State
   const [isBowlerModalOpen, setIsBowlerModalOpen] = useState(false);
+  const [isBowlerModalDismissible, setIsBowlerModalDismissible] = useState(true);
   const [newBowlerId, setNewBowlerId] = useState("");
 
   // Change Batsman Modal State
@@ -298,6 +299,7 @@ export default function LiveMatchesPage() {
       }
 
       if (data.overEnded) {
+        setIsBowlerModalDismissible(false);
         setIsBowlerModalOpen(true);
       }
 
@@ -401,6 +403,7 @@ export default function LiveMatchesPage() {
     const activeBowlers = bowlingPlayers.filter((p) => p.role === "Bowler" || p.role === "All-Rounder");
     const otherBowlers = activeBowlers.filter((p) => p._id !== match.currBowler?._id);
     setNewBowlerId(otherBowlers[0]?._id || bowlingPlayers[0]?._id || "");
+    setIsBowlerModalDismissible(true);
     setIsBowlerModalOpen(true);
   };
 
@@ -755,11 +758,17 @@ export default function LiveMatchesPage() {
               </div>
             </div>
 
-            {match.target > 0 && (
+            {match.target > 0 && match.status !== "Ended" && (
               <div className="bg-brand-secondary/40 border border-brand-primary/30 p-3 rounded-md text-xs text-brand-dark font-semibold">
                 🎯 Target: <strong>{match.target} runs</strong>. Need{" "}
                 <strong>{Math.max(0, match.target - score)} runs</strong> from{" "}
                 <strong>{Math.max(0, match.overs * 6 - legalBalls)} balls</strong>.
+              </div>
+            )}
+
+            {match.status === "Ended" && match.winner && (
+              <div className="bg-green-50 border border-green-200 p-2.5 rounded-xl text-center text-xs font-bold text-green-700">
+                🏆 Winner: {match.winner.name} won the match!
               </div>
             )}
           </div>
@@ -900,7 +909,12 @@ export default function LiveMatchesPage() {
                 <div className="bg-zinc-50 border border-zinc-200 p-6 rounded-md text-center flex flex-col items-center justify-center">
                   <span className="text-3xl">🏆</span>
                   <h4 className="text-sm font-bold text-zinc-800 mt-2">This match has ended</h4>
-                  <p className="text-xs text-zinc-500 mt-1">The game is complete. To resume scoring, change its status in Matches.</p>
+                  {match.winner && (
+                    <p className="text-sm font-semibold text-green-600 mt-1">
+                      Winner: {match.winner.name} won the match!
+                    </p>
+                  )}
+                  <p className="text-xs text-zinc-500 mt-2">The game is complete. To resume scoring, change its status in Matches.</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
@@ -1173,7 +1187,24 @@ export default function LiveMatchesPage() {
       </Modal>
 
       {/* Change Bowler Modal */}
-      <Modal isOpen={isBowlerModalOpen} onClose={() => setIsBowlerModalOpen(false)} title="Change Bowler" footer={<><Button variant="secondary" onClick={() => setIsBowlerModalOpen(false)}>Cancel</Button><Button variant="primary" type="submit" form="change-bowler-form">Apply Bowler</Button></>}>
+      <Modal
+        isOpen={isBowlerModalOpen}
+        onClose={() => setIsBowlerModalOpen(false)}
+        title="Change Bowler"
+        isDismissible={isBowlerModalDismissible}
+        footer={
+          <>
+            {isBowlerModalDismissible && (
+              <Button variant="secondary" onClick={() => setIsBowlerModalOpen(false)}>
+                Cancel
+              </Button>
+            )}
+            <Button variant="primary" type="submit" form="change-bowler-form">
+              Apply Bowler
+            </Button>
+          </>
+        }
+      >
         <form id="change-bowler-form" onSubmit={handleSaveBowlerChange} className="flex flex-col gap-4">
           <Select
             label="Select Next Bowler"

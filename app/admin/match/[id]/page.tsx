@@ -7,6 +7,7 @@ import Card from "@/components/Card";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Loader from "@/components/Loader";
+import TeamLogo from "@/components/TeamLogo";
 import { MatchType } from "@/types/matchType";
 import { PlayerStatsType } from "@/types/playerStatsType";
 import { BallEventType } from "@/types/ballEventType";
@@ -175,7 +176,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
       <div className="bg-white border border-zinc-200 border-t-4 border-t-brand-accent rounded-lg text-zinc-900 p-5 flex flex-col gap-4 shadow-xs relative overflow-hidden">
         <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{match.battingTeam?.logo ?? "🏏"}</span>
+            <TeamLogo logo={match.battingTeam?.logo} name={match.battingTeam?.name} size="sm" />
             <div>
               <h2 className="text-lg font-bold text-zinc-900">{match.battingTeam?.name ?? "Batting Team"}</h2>
               <p className="text-[10px] text-brand-accent font-bold uppercase tracking-wider">
@@ -432,34 +433,6 @@ export default function MatchViewPage({ params }: MatchViewProps) {
           {/* Tab 2: Live Commentary */}
           {activeTab === "commentary" && (
             <div className="flex flex-col gap-4">
-              {/* Over history bubble feed */}
-              <div className="border border-zinc-200 bg-zinc-50/50 p-4 rounded-lg flex items-center justify-between gap-3">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Current Over Ball log</span>
-                  <p className="text-xs text-zinc-500">Outcome representation (Left to Right, Chronological)</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {recentBallsList.length === 0 ? (
-                    <span className="text-xs text-zinc-400 italic">No deliveries recorded in this over yet.</span>
-                  ) : (
-                    recentBallsList.map((ball, idx) => {
-                      const val = getBallText(ball);
-                      let bg = "bg-zinc-100 text-zinc-800 border-zinc-200";
-                      if (val === "W") bg = "bg-red-100 text-red-700 border-red-200 font-bold";
-                      else if (val === "4" || val === "6") bg = "bg-brand-secondary text-brand-accent border-brand-primary/45 font-bold";
-
-                      return (
-                        <span
-                          key={idx}
-                          className={`h-8 w-8 rounded-full border flex items-center justify-center text-xs font-semibold ${bg}`}
-                        >
-                          {val}
-                        </span>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
 
               {/* Feed lists */}
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto divide-y divide-zinc-100">

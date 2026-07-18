@@ -167,6 +167,7 @@ export async function PATCH(req: NextRequest) {
             winner,
             currStriker,
             currNonStriker,
+            currBowler,
         } = await req.json();
 
         if (!mongoose.Types.ObjectId.isValid(id)) {

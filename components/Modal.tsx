@@ -9,6 +9,7 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  isDismissible?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -18,10 +19,11 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   size = "md",
+  isDismissible = true,
 }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && isDismissible) onClose();
     };
 
     if (isOpen) {
@@ -47,7 +49,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs">
       {/* Backdrop Close Click */}
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute inset-0" onClick={isDismissible ? onClose : undefined} />
 
       {/* Modal Container */}
       <div
@@ -58,15 +60,17 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50">
           <h3 className="text-base font-semibold text-zinc-950">{title}</h3>
-          <button
-            type="button"
-            className="text-zinc-400 hover:text-zinc-500 hover:bg-zinc-100 rounded-lg p-1.5 cursor-pointer"
-            onClick={onClose}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          {isDismissible && (
+            <button
+              type="button"
+              className="text-zinc-400 hover:text-zinc-500 hover:bg-zinc-100 rounded-lg p-1.5 cursor-pointer"
+              onClick={onClose}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Content Area */}

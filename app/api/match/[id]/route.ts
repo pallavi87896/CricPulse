@@ -17,15 +17,15 @@ export async function GET(req:Request, { params }: { params: Promise<{ id: strin
     await connectDB();
 
     const match = await Match.findById(id)
-    .populate("teamA","name")
-    .populate( "teamB", "name")
+    .populate("teamA","name logo")
+    .populate( "teamB", "name logo")
     .populate( "currStriker", "name")
     .populate( "currBowler","name")
     .populate("currNonStriker","name")
     .populate("winner", "name")
     .populate("tossWinner","name")
-    .populate("battingTeam", "name")
-    .populate("bowlingTeam", "name");
+    .populate("battingTeam", "name logo")
+    .populate("bowlingTeam", "name logo");
 
     if(!match){
         return Response.json(

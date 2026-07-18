@@ -28,8 +28,8 @@ export async function GET(req:Request, { params } : { params : Promise < { id : 
                 .populate("currStriker", "name")
                 .populate("currNonStriker", "name")
                 .populate("currBowler", "name")
-                .populate("battingTeam", "name")
-                .populate("bowlingTeam", "name")
+                .populate("battingTeam", "name logo")
+                .populate("bowlingTeam", "name logo")
                 .populate("winner", "name");
 
                 if (!match) {

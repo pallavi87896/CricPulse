@@ -12,4 +12,9 @@ export function startSecondInnings( match:any ){
     match.wickets=0;
     match.extras=0;
     match.legalBalls=0;
+
+    // Reset active batsmen and bowler
+    match.currStriker = null;
+    match.currNonStriker = null;
+    match.currBowler = null;
 }
