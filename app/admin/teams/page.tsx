@@ -328,7 +328,7 @@ export default function TeamsPage() {
               {customLogoText && !uploading && (
                 <div className="mt-3 p-2 border border-zinc-200 rounded-lg flex items-center gap-3 bg-zinc-50/50">
                   <TeamLogo logo={customLogoText} name="Preview" size="sm" />
-                  <span className="text-[10px] text-green-600 font-semibold truncate max-w-[200px]">✓ Uploaded: {customLogoText}</span>
+                  <span className="text-[10px] text-green-600 font-semibold truncate max-w-[200px]">✓ Uploaded to imagekit</span>
                 </div>
               )}
             </div>
