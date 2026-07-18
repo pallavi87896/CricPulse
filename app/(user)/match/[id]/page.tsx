@@ -76,14 +76,8 @@ export default function MatchViewPage({ params }: MatchViewProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-zinc-200 min-h-[70vh] shadow-xs">
-        <div className="h-10 bg-zinc-200 w-1/3 rounded-lg animate-pulse" />
-        <Loader variant="card" className="bg-white border-zinc-200" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-24 bg-zinc-200 rounded-xl animate-pulse" />
-          <div className="h-24 bg-zinc-200 rounded-xl animate-pulse" />
-          <div className="h-24 bg-zinc-200 rounded-xl animate-pulse" />
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader size="lg" />
       </div>
     );
   }
@@ -97,7 +91,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
           The match details could not be loaded or the match ID is incorrect.
         </p>
         <Link href="/">
-          <Button variant="secondary" className="border-zinc-200 text-zinc-650 hover:text-zinc-900">
+          <Button variant="secondary" className="border-zinc-200 text-zinc-600 hover:text-zinc-900">
             Return to Live Hub
           </Button>
         </Link>
@@ -176,17 +170,17 @@ export default function MatchViewPage({ params }: MatchViewProps) {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 pb-4">
         <div className="text-left">
-          <h1 className="text-xl font-extrabold text-zinc-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
             {match.teamA.name} <span className="text-zinc-400 font-medium text-xs">VS</span> {match.teamB.name}
           </h1>
-          <p className="text-xs text-zinc-550 mt-1 font-semibold tracking-wide">
+          <p className="text-xs text-zinc-500 mt-1 font-semibold tracking-wide">
             Venue: {match.venue || "Stadium Venue"}
           </p>
         </div>
 
         <Link href="/">
-          <Button variant="secondary" className="border-zinc-200 text-zinc-650 hover:bg-zinc-50 font-bold text-xs py-2 rounded-xl">
-            ← Back to Live Hub
+          <Button variant="secondary" className="border-zinc-200 text-zinc-600 hover:bg-zinc-50 font-bold text-xs py-2 rounded-xl">
+            ← Back to Dashboard
           </Button>
         </Link>
       </div>
@@ -194,11 +188,11 @@ export default function MatchViewPage({ params }: MatchViewProps) {
       {/* 1. Main scoreboard Dashboard */}
       <div className="bg-white border border-zinc-200 border-t-4 border-t-[var(--color-brand-accent)] rounded-2xl p-6 flex flex-col gap-5 shadow-xs relative overflow-hidden">
         
-        <div className="flex justify-between items-center border-b border-zinc-150 pb-4">
+        <div className="flex justify-between items-center border-b border-zinc-200 pb-4">
           <div className="flex items-center gap-3">
             <TeamLogo logo={match.battingTeam?.logo} name={match.battingTeam?.name} size="md" className="bg-zinc-50 border-zinc-200" />
             <div className="text-left">
-              <h2 className="text-base font-extrabold text-zinc-900">{match.battingTeam?.name ?? "Batting Team"}</h2>
+              <h2 className="text-base font-bold text-zinc-900">{match.battingTeam?.name ?? "Batting Team"}</h2>
               <p className="text-[9px] text-[var(--color-brand-accent)] font-bold uppercase tracking-wider mt-0.5">
                 Innings {match.innings} {match.status === "Ended" && "(Completed)"}
               </p>
@@ -211,20 +205,20 @@ export default function MatchViewPage({ params }: MatchViewProps) {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-center text-left">
           <div className="col-span-2 sm:col-span-2">
-            <span className="text-[10px] font-bold text-zinc-550 uppercase tracking-widest block">Team Score</span>
-            <div className="text-4xl sm:text-5xl font-black font-mono mt-1 text-zinc-900 flex items-baseline gap-1">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Team Score</span>
+            <div className="text-4xl sm:text-5xl font-bold font-mono mt-1 text-zinc-900 flex items-baseline gap-1">
               <span>{score}/{wickets}</span>
             </div>
           </div>
           <div>
-            <span className="text-[10px] font-bold text-zinc-550 uppercase tracking-widest block">Overs Completed</span>
-            <div className="text-2xl font-black font-mono mt-1 text-zinc-800">
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Overs Completed</span>
+            <div className="text-2xl font-bold font-mono mt-1 text-zinc-800">
               {oversStr} <span className="text-zinc-500 text-sm font-semibold">/ {totalOvers}</span>
             </div>
           </div>
           <div>
-            <span className="text-[10px] font-bold text-zinc-550 uppercase tracking-widest block">Run Rate</span>
-            <div className="text-2xl font-black font-mono mt-1 text-zinc-800">{runRate}</div>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Run Rate</span>
+            <div className="text-2xl font-bold font-mono mt-1 text-zinc-800">{runRate}</div>
           </div>
         </div>
 
@@ -245,14 +239,14 @@ export default function MatchViewPage({ params }: MatchViewProps) {
       {/* 2. Middle Cards (Batsman and Bowler Stats) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
         {/* Striker */}
-        <div className={`border border-zinc-200 border-l-4 ${match.currStriker ? "border-l-[var(--color-brand-primary)]" : "border-l-zinc-350"} bg-white rounded-2xl p-5 flex flex-col justify-between shadow-xs`}>
+        <div className={`border border-zinc-200 border-l-4 ${match.currStriker ? "border-l-[var(--color-brand-primary)]" : "border-l-zinc-300"} bg-white rounded-2xl p-5 flex flex-col justify-between shadow-xs`}>
           <div>
             <span className="text-[9px] font-bold text-[var(--color-brand-accent)] uppercase tracking-wider">Striker 🏏</span>
-            <h4 className="text-sm font-black text-zinc-900 mt-1">{match.currStriker?.name ?? "Not In-Play"}</h4>
+            <h4 className="text-sm font-bold text-zinc-900 mt-1">{match.currStriker?.name ?? "Not In-Play"}</h4>
           </div>
           <div className="flex justify-between items-baseline mt-4">
-            <span className="text-2xl font-black font-mono text-zinc-900">{match.currStriker ? strikerStat.runs : "-"}</span>
-            <span className="text-xs text-zinc-550 font-bold font-mono">
+            <span className="text-2xl font-bold font-mono text-zinc-900">{match.currStriker ? strikerStat.runs : "-"}</span>
+            <span className="text-xs text-zinc-500 font-bold font-mono">
               {match.currStriker ? `${strikerStat.balls}b (SR ${strikerSR})` : ""}
             </span>
           </div>
@@ -261,12 +255,12 @@ export default function MatchViewPage({ params }: MatchViewProps) {
         {/* Non-Striker */}
         <div className="border border-zinc-200 border-l-4 border-l-zinc-300 bg-white rounded-2xl p-5 flex flex-col justify-between shadow-xs">
           <div>
-            <span className="text-[9px] font-bold text-zinc-550 uppercase tracking-wider">Non-Striker</span>
-            <h4 className="text-sm font-black text-zinc-900 mt-1">{match.currNonStriker?.name ?? "Not In-Play"}</h4>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Non-Striker</span>
+            <h4 className="text-sm font-bold text-zinc-900 mt-1">{match.currNonStriker?.name ?? "Not In-Play"}</h4>
           </div>
           <div className="flex justify-between items-baseline mt-4">
-            <span className="text-2xl font-black font-mono text-zinc-800">{match.currNonStriker ? nonStrikerStat.runs : "-"}</span>
-            <span className="text-xs text-zinc-550 font-bold font-mono">
+            <span className="text-2xl font-bold font-mono text-zinc-800">{match.currNonStriker ? nonStrikerStat.runs : "-"}</span>
+            <span className="text-xs text-zinc-500 font-bold font-mono">
               {match.currNonStriker ? `${nonStrikerStat.balls}b (SR ${nonStrikerSR})` : ""}
             </span>
           </div>
@@ -275,14 +269,14 @@ export default function MatchViewPage({ params }: MatchViewProps) {
         {/* Bowler */}
         <div className="border border-zinc-200 border-l-4 border-l-zinc-300 bg-white rounded-2xl p-5 flex flex-col justify-between shadow-xs">
           <div>
-            <span className="text-[9px] font-bold text-zinc-550 uppercase tracking-wider">Active Bowler ⚾</span>
-            <h4 className="text-sm font-black text-zinc-900 mt-1">{match.currBowler?.name ?? "Not Selected"}</h4>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Active Bowler ⚾</span>
+            <h4 className="text-sm font-bold text-zinc-900 mt-1">{match.currBowler?.name ?? "Not Selected"}</h4>
           </div>
           <div className="flex justify-between items-baseline mt-4">
-            <span className="text-2xl font-black font-mono text-zinc-800">
+            <span className="text-2xl font-bold font-mono text-zinc-800">
               {match.currBowler ? `${bowlerStat.wicketsTaken}-${bowlerStat.runsConceded}` : "-"}
             </span>
-            <span className="text-xs text-zinc-550 font-bold font-mono">
+            <span className="text-xs text-zinc-500 font-bold font-mono">
               {match.currBowler ? `${bowlerOversStr}ov (Econ ${bowlerEcon})` : ""}
             </span>
           </div>
@@ -296,7 +290,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
         <div className="flex border-b border-zinc-200 bg-zinc-50/50">
           <button
             onClick={() => setActiveTab("scorecard")}
-            className={`px-6 py-4 text-xs font-black uppercase tracking-widest border-b-2 cursor-pointer transition-colors ${
+            className={`px-6 py-4 text-xs font-bold uppercase tracking-widest border-b-2 cursor-pointer transition-colors ${
               activeTab === "scorecard"
                 ? "border-[var(--color-brand-primary)] text-[var(--color-brand-dark)] bg-zinc-100/10"
                 : "border-transparent text-zinc-500 hover:text-zinc-800"
@@ -306,7 +300,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
           </button>
           <button
             onClick={() => setActiveTab("commentary")}
-            className={`px-6 py-4 text-xs font-black uppercase tracking-widest border-b-2 cursor-pointer transition-colors ${
+            className={`px-6 py-4 text-xs font-bold uppercase tracking-widest border-b-2 cursor-pointer transition-colors ${
               activeTab === "commentary"
                 ? "border-[var(--color-brand-primary)] text-[var(--color-brand-dark)] bg-zinc-100/10"
                 : "border-transparent text-zinc-500 hover:text-zinc-800"
@@ -328,7 +322,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       selectedInnings === 1
                         ? "bg-[var(--color-brand-primary)] text-white shadow-xs"
-                        : "bg-zinc-105 text-zinc-650 hover:bg-zinc-200"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                     }`}
                   >
                     Innings 1 ({match.bowlingTeam?.name})
@@ -339,7 +333,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       selectedInnings === 2
                         ? "bg-[var(--color-brand-primary)] text-white shadow-xs"
-                        : "bg-zinc-105 text-zinc-650 hover:bg-zinc-200"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                     }`}
                   >
                     Innings 2 ({match.battingTeam?.name})
@@ -351,10 +345,10 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                 {/* Batting Card */}
                 <div className="flex flex-col">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-555">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                       Batting Scorecard ({!isViewingSecondInnings ? match.bowlingTeam?.name : match.battingTeam?.name})
                     </h4>
-                    <span className="text-xs font-extrabold text-zinc-700">
+                    <span className="text-xs font-bold text-zinc-700">
                       {!isViewingSecondInnings 
                         ? `${match.target > 0 ? match.target - 1 : 0}/${innings1Wickets} (${innings1OversStr} ov)`
                         : `${score}/${wickets} (${oversStr} ov)`
@@ -362,7 +356,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     </span>
                   </div>
                   <div className="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50/20 text-xs">
-                    <div className="bg-zinc-55 border-b border-zinc-200 px-4 py-3 flex justify-between font-bold text-zinc-500">
+                    <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-3 flex justify-between font-bold text-zinc-500">
                       <span>Batsman</span>
                       <div className="flex gap-6 font-mono text-sm">
                         <span className="w-8 text-right">R</span>
@@ -416,7 +410,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     Bowling Scorecard ({!isViewingSecondInnings ? match.battingTeam?.name : match.bowlingTeam?.name})
                   </h4>
                   <div className="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50/20 text-xs">
-                    <div className="bg-zinc-55 border-b border-zinc-200 px-4 py-3 flex justify-between font-bold text-zinc-500">
+                    <div className="bg-zinc-100 border-b border-zinc-200 px-4 py-3 flex justify-between font-bold text-zinc-500">
                       <span>Bowler</span>
                       <div className="flex gap-6 font-mono text-sm">
                         <span className="w-8 text-right">O</span>
@@ -436,8 +430,8 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                           <div key={p._id} className={`px-4 py-3 flex justify-between items-center ${isBowler ? "bg-[var(--color-brand-secondary)]/30 font-semibold" : ""}`}>
                             <span className="font-semibold text-zinc-700">{p.name}</span>
                             <div className="flex gap-6 font-mono text-zinc-800 text-sm">
-                              <span className="w-8 text-right text-zinc-405">{ovs}</span>
-                              <span className="w-8 text-right text-zinc-405">{stats.runsConceded}</span>
+                              <span className="w-8 text-right text-zinc-400">{ovs}</span>
+                              <span className="w-8 text-right text-zinc-400">{stats.runsConceded}</span>
                               <span className="w-8 text-right font-bold text-zinc-950">{stats.wicketsTaken}</span>
                             </div>
                           </div>
@@ -453,34 +447,6 @@ export default function MatchViewPage({ params }: MatchViewProps) {
           {/* Tab 2: Live Commentary */}
           {activeTab === "commentary" && (
             <div className="flex flex-col gap-5">
-              {/* Over history bubbles */}
-              <div className="border border-zinc-200 bg-zinc-50/50 p-5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block">Current Over Ball log</span>
-                  <p className="text-[10px] text-zinc-450 font-semibold mt-0.5">Chronological delivery outcomes (left-to-right)</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {recentBallsList.length === 0 ? (
-                    <span className="text-xs text-zinc-400 italic font-semibold">No deliveries recorded in this over.</span>
-                  ) : (
-                    recentBallsList.map((ball, idx) => {
-                      const val = getBallText(ball);
-                      let bg = "bg-zinc-100 text-zinc-650 border-zinc-200";
-                      if (val === "W") bg = "bg-red-50 text-red-650 border-red-200 font-bold";
-                      else if (val === "4" || val === "6") bg = "bg-[var(--color-brand-secondary)] text-[var(--color-brand-dark)] border-[var(--color-brand-primary)]/25 font-bold";
-
-                      return (
-                        <span
-                          key={idx}
-                          className={`h-9 w-9 rounded-full border flex items-center justify-center text-xs font-semibold select-none ${bg}`}
-                        >
-                          {val}
-                        </span>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
 
               {/* Commentary logs list */}
               <div className="flex flex-col gap-3.5 max-h-[300px] overflow-y-auto divide-y divide-zinc-200">
@@ -496,7 +462,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                           <span>{comm.username || "Live Scorer"}</span>
                           <span>{comm.createdAt ? new Date(comm.createdAt).toLocaleTimeString() : ""}</span>
                         </div>
-                        <p className="text-zinc-650 font-medium leading-relaxed">{comm.comment}</p>
+                        <p className="text-zinc-600 font-medium leading-relaxed">{comm.comment}</p>
                       </div>
                     ))
                 )}

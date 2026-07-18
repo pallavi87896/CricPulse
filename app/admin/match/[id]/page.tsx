@@ -6,6 +6,7 @@ import PageHeader from "@/components/PageHeader";
 import Card from "@/components/Card";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
+import Loader from "@/components/Loader";
 import { MatchType } from "@/types/matchType";
 import { PlayerStatsType } from "@/types/playerStatsType";
 import { BallEventType } from "@/types/ballEventType";
@@ -65,7 +66,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin text-brand-accent rounded-full h-10 w-10 border-b-2 border-current"></div>
+        <Loader size="md" />
       </div>
     );
   }
@@ -75,7 +76,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
       <div className="flex flex-col gap-6 text-center py-12">
         <h3 className="text-lg font-semibold text-zinc-900">Match not found</h3>
         <p className="text-sm text-zinc-500">The match details could not be loaded or the ID is incorrect.</p>
-        <Link href="/">
+        <Link href="/admin">
           <Button variant="secondary">Go back to Dashboard</Button>
         </Link>
       </div>
@@ -162,7 +163,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
         title={`${match.teamA.name} vs ${match.teamB.name}`}
         description={`Live coverage from ${match.venue || "Stadium Venue"}.`}
         actions={
-          <Link href="/">
+          <Link href="/admin">
             <Button variant="secondary" size="sm">
               Back to Dashboard
             </Button>
@@ -255,7 +256,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
         {/* Bowler */}
         <Card className="bg-white border-l-4 border-l-zinc-400">
           <div>
-            <span className="text-[9px] font-bold text-zinc-550 uppercase tracking-wider">Bowler ⚾</span>
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Bowler ⚾</span>
             <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currBowler?.name ?? "Not Selected"}</h4>
           </div>
           <div className="flex justify-between items-baseline mt-4">
@@ -271,7 +272,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
 
       {/* Tabs Layout */}
       <div className="bg-white border border-zinc-200 rounded-lg shadow-xs overflow-hidden">
-        <div className="flex border-b border-zinc-150 bg-zinc-50/50">
+        <div className="flex border-b border-zinc-200 bg-zinc-50/50">
           <button
             onClick={() => setActiveTab("scorecard")}
             className={`px-5 py-3 text-xs font-bold uppercase tracking-wider border-b-2 cursor-pointer transition-colors ${
@@ -306,7 +307,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       selectedInnings === 1
                         ? "bg-brand-accent text-white shadow-xs"
-                        : "bg-zinc-100 text-zinc-650 hover:bg-zinc-200"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                     }`}
                   >
                     Innings 1 ({match.bowlingTeam?.name})
@@ -317,7 +318,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       selectedInnings === 2
                         ? "bg-brand-accent text-white shadow-xs"
-                        : "bg-zinc-100 text-zinc-650 hover:bg-zinc-200"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                     }`}
                   >
                     Innings 2 ({match.battingTeam?.name})
@@ -329,10 +330,10 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                 {/* Batting Card */}
                 <div>
                   <div className="flex justify-between items-center mb-2.5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-450">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                       Batting Scorecard ({!isViewingSecondInnings ? match.bowlingTeam?.name : match.battingTeam?.name})
                     </h4>
-                    <span className="text-xs font-extrabold text-zinc-700">
+                    <span className="text-xs font-bold text-zinc-700">
                       {!isViewingSecondInnings 
                         ? `${match.target > 0 ? match.target - 1 : 0}/${innings1Wickets} (${innings1OversStr} ov)`
                         : `${score}/${wickets} (${oversStr} ov)`
@@ -340,7 +341,7 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                     </span>
                   </div>
                   <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
-                    <div className="bg-zinc-55 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-550">
+                    <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-500">
                       <span>Batsman</span>
                       <div className="flex gap-4 font-mono">
                         <span className="w-8 text-right">R</span>
@@ -390,11 +391,11 @@ export default function MatchViewPage({ params }: MatchViewProps) {
 
                 {/* Bowling Card */}
                 <div>
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-450 mb-2.5">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2.5">
                     Bowling Scorecard ({!isViewingSecondInnings ? match.battingTeam?.name : match.bowlingTeam?.name})
                   </h4>
                   <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
-                    <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-550">
+                    <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-2 flex justify-between font-semibold text-zinc-500">
                       <span>Bowler</span>
                       <div className="flex gap-4 font-mono">
                         <span className="w-8 text-right">O</span>
@@ -414,8 +415,8 @@ export default function MatchViewPage({ params }: MatchViewProps) {
                           <div key={p._id} className={`px-3 py-2 flex justify-between items-center ${isBowler ? "bg-brand-secondary/25 font-semibold" : ""}`}>
                             <span className="font-semibold text-zinc-700">{p.name}</span>
                             <div className="flex gap-4 font-mono text-zinc-900">
-                              <span className="w-8 text-right text-zinc-550">{ovs}</span>
-                              <span className="w-8 text-right text-zinc-550">{stats.runsConceded}</span>
+                              <span className="w-8 text-right text-zinc-500">{ovs}</span>
+                              <span className="w-8 text-right text-zinc-500">{stats.runsConceded}</span>
                               <span className="w-8 text-right font-bold text-zinc-900">{stats.wicketsTaken}</span>
                             </div>
                           </div>
@@ -463,14 +464,14 @@ export default function MatchViewPage({ params }: MatchViewProps) {
               {/* Feed lists */}
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto divide-y divide-zinc-100">
                 {comments.length === 0 ? (
-                  <div className="text-center py-6 text-xs text-zinc-450 italic">No commentary logged yet.</div>
+                  <div className="text-center py-6 text-xs text-zinc-500 italic">No commentary logged yet.</div>
                 ) : (
                   comments
                     .slice()
                     .reverse()
                     .map((comm) => (
                       <div key={comm._id} className="pt-2 text-xs flex flex-col gap-0.5">
-                        <div className="flex justify-between text-[10px] text-zinc-450">
+                        <div className="flex justify-between text-[10px] text-zinc-500">
                           <span className="font-bold text-zinc-500">{comm.username || "System Log"}</span>
                           <span>{comm.createdAt ? new Date(comm.createdAt).toLocaleTimeString() : ""}</span>
                         </div>

@@ -51,11 +51,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       ),
     },
     {
-      name: "Live Match",
+      name: "Score Match",
       href: "/admin/live-match",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+    },
+    {
+      name: "User Dashboard",
+      href: "/",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
         </svg>
       ),
     },
@@ -124,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 className={`flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-md transition-colors ${
                   isActive
                     ? "bg-brand-secondary text-brand-accent"
-                    : "text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
+                    : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
               >
                 <span className={isActive ? "text-brand-accent" : "text-zinc-400"}>
@@ -147,17 +157,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </span>
-            Exit Terminal
+            Logout
           </button>
-        </div>
-
-        {/* Footer info */}
-        <div className="p-4 border-t border-zinc-150 bg-zinc-50/70 text-xs text-zinc-550 flex items-center justify-between">
-          <span>System status</span>
-          <div className="flex items-center gap-1.5 font-medium text-green-700">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-            Online
-          </div>
         </div>
       </aside>
     </>

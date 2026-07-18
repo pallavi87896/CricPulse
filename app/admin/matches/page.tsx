@@ -14,6 +14,7 @@ import Loader from "@/components/Loader";
 import { MatchType } from "@/types/matchType";
 import { TeamType } from "@/types/teamType";
 import { MatchFormType } from "@/types/matchFormType";
+import { useRouter } from "next/navigation";
 
 export default function MatchPage() {
   const [matches, setMatches] = useState<MatchType[]>([]);
@@ -22,6 +23,7 @@ export default function MatchPage() {
   const [battingTeam, setBattingTeam] = useState("");
   const [bowlingTeam, setBowlingTeam] = useState("");
 
+  const [searchQuery,setSearchQuery] = useState("");
   // Views & Modals
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [viewingMatch, setViewingMatch] = useState<MatchType | null>(null);
@@ -40,18 +42,21 @@ export default function MatchPage() {
   };
 
   const [formData, setFormData] = useState(initialFormData);
+  const router= useRouter();
 
   // Deletion confirmation
   const [isConfirmationModal, setIsConfirmationModal] = useState(false);
   const [matchToDelete, setMatchToDelete] = useState<MatchType | null>(null);
 
   const handleOpenView = (match: MatchType) => {
+    router.push(`/admin/live-match`)
     setViewingMatch(match);
     setIsViewOpen(true);
   };
 
   const handleDeleteClick = (match: MatchType) => {
     setMatchToDelete(match);
+    
     setIsConfirmationModal(true);
   };
 
@@ -127,9 +132,9 @@ export default function MatchPage() {
   const handleEditMatch = (match: MatchType) => {
     setEditingMatch(match);
     setFormData({
-      teamA: match.teamA._id,
-      teamB: match.teamB._id,
-      tossWinner: match.tossWinner._id,
+      teamA: match.teamA?._id ?? "",
+      teamB: match.teamB?._id ?? "",
+      tossWinner: match.tossWinner?._id ?? "",
       tossDecision: match.tossDecision,
       venue: match.venue ?? "",
       overs: match.overs,
@@ -205,6 +210,7 @@ export default function MatchPage() {
       label: teams?.find((t) => t._id === formData.teamB)?.name || "",
     },
   ].filter((item) => item.value);
+  //keep only the options tht has a valid team id
 
   useEffect(() => {
     if (!formData.teamA || !formData.teamB || !formData.tossWinner) {
@@ -235,6 +241,15 @@ export default function MatchPage() {
     formData.tossDecision,
   ]);
 
+  const filteredMatches = matches.filter((match)=>{
+    const query = searchQuery.toLowerCase();
+    const teamAName = match.teamA?.name?.toLowerCase() || "";
+    const teamBName = match.teamB?.name?.toLowerCase() || "";
+    const venue = match.venue?.toLowerCase() || "";
+
+    return teamAName.includes(query) || teamBName.includes(query) || venue.includes(query);
+  });
+
   const createFooter = (
     <>
       <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
@@ -260,6 +275,31 @@ export default function MatchPage() {
           </Button>
         }
       />
+            {/* Search & Info Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border w-full border-zinc-200 mb-6">
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="Search matches..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-zinc-50 border border-zinc-200 text-zinc-800 text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-[var(--color-brand-primary)]"
+          />
+          <svg
+            className="w-4 h-4 text-zinc-400 absolute left-3 top-3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        
+      </div>
+
+
 
       {/* Matches List Table */}
       {loading ? (
@@ -267,9 +307,9 @@ export default function MatchPage() {
       ) : (
         <SimpleTable
           headers={["Teams", "Status", "Date / Time", "Actions"]}
-          isEmpty={matches.length === 0}
+          isEmpty={filteredMatches.length === 0}
         >
-          {matches.map((match) => (
+          {filteredMatches.map((match) => (
             <tr
               key={match._id}
               onClick={() => handleOpenView(match)}
@@ -278,13 +318,13 @@ export default function MatchPage() {
               <td className="px-6 py-4 whitespace-nowrap font-bold text-zinc-950">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <TeamLogo logo={match.teamA.logo} name={match.teamA.name} size="sm" />
-                    <span>{match.teamA.name}</span>
+                    <TeamLogo logo={match.teamA?.logo} name={match.teamA?.name ?? "Deleted Team"} size="sm" />
+                    <span>{match.teamA?.name ?? "Deleted Team"}</span>
                   </div>
                   <span className="text-zinc-400 font-semibold text-xs tracking-wider">VS</span>
                   <div className="flex items-center gap-1.5">
-                    <TeamLogo logo={match.teamB.logo} name={match.teamB.name} size="sm" />
-                    <span>{match.teamB.name}</span>
+                    <TeamLogo logo={match.teamB?.logo} name={match.teamB?.name ?? "Deleted Team"} size="sm" />
+                    <span>{match.teamB?.name ?? "Deleted Team"}</span>
                   </div>
                 </div>
               </td>
@@ -292,7 +332,7 @@ export default function MatchPage() {
               <td className="px-6 py-4 whitespace-nowrap">
                 <Badge status={match.status} />
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-zinc-550 font-medium text-sm">
+              <td className="px-6 py-4 whitespace-nowrap text-zinc-500 font-medium text-sm">
                 {match.dateTime
                   ? new Date(match.dateTime).toLocaleString()
                   : "Upcoming"}
@@ -362,7 +402,9 @@ export default function MatchPage() {
               options={teamOptions}
               value={formData.teamB}
               onChange={(e) =>
-                setFormData({ ...formData, teamB: e.target.value })
+                setFormData({ 
+                  ...formData, 
+                  teamB: e.target.value })
               }
             />
           </div>
@@ -436,103 +478,7 @@ export default function MatchPage() {
               setFormData({ ...formData, dateTime: e.target.value })
             }
           />
-
-          {/* Dynamic player fields derived from batting and bowling team */}
-          {battingTeam && bowlingTeam && (
-            <div className="mt-2 border-t border-zinc-150 pt-4 flex flex-col gap-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-550">
-                Starter Setup Preview
-              </h4>
-
-              <div className="bg-zinc-50 p-3.5 border border-zinc-200 rounded-xl text-xs text-zinc-650 flex flex-col gap-1.5">
-                <p className="flex items-center gap-1.5">
-                  🏏 <strong>Batting First:</strong>{" "}
-                  <span>
-                    {teams.find((team) => team._id === battingTeam)?.name}
-                  </span>
-                </p>
-                <p className="flex items-center gap-1.5">
-                  ⚾ <strong>Bowling First:</strong>{" "}
-                  <span>
-                    {teams.find((team) => team._id === bowlingTeam)?.name}
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
         </form>
-      </Modal>
-
-      {/* View Modal Detail Panel */}
-      <Modal
-        isOpen={isViewOpen}
-        onClose={() => {
-          setIsViewOpen(false);
-          setViewingMatch(null);
-        }}
-        title="Match Details Preview"
-        size="md"
-      >
-        {viewingMatch && (
-          <div className="flex flex-col gap-5 text-sm text-left">
-            <div className="flex justify-between items-center bg-zinc-50 border border-zinc-200 rounded-xl p-5 shadow-xs">
-              <div className="text-center flex-1 font-bold text-base text-zinc-950 flex flex-col items-center gap-1">
-                <TeamLogo logo={viewingMatch.teamA.logo} name={viewingMatch.teamA.name} size="md" />
-                <div className="mt-1 leading-tight">{viewingMatch.teamA.name}</div>
-              </div>
-              <div className="text-zinc-400 font-extrabold px-3 text-xs tracking-wider">VS</div>
-              <div className="text-center flex-1 font-bold text-base text-zinc-950 flex flex-col items-center gap-1">
-                <TeamLogo logo={viewingMatch.teamB.logo} name={viewingMatch.teamB.name} size="md" />
-                <div className="mt-1 leading-tight">{viewingMatch.teamB.name}</div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-y-4 gap-x-4 border-t border-zinc-150 pt-4 text-xs font-semibold">
-              <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Venue</span>
-                <p className="text-sm font-bold text-zinc-800">{viewingMatch.venue || "TBD"}</p>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Date</span>
-                <p className="text-sm font-bold text-zinc-800">
-                  {viewingMatch.dateTime
-                    ? new Date(viewingMatch.dateTime).toLocaleString()
-                    : "Not scheduled"}
-                </p>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Status</span>
-                <div className="mt-0.5">
-                  <Badge status={viewingMatch.status} />
-                </div>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Overs Limit</span>
-                <p className="text-sm font-bold font-mono text-zinc-800">{viewingMatch.overs} Overs</p>
-              </div>
-              <div className="col-span-2 border-t border-zinc-150 pt-4 text-zinc-650">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Toss Setup</span>
-                <p className="font-semibold text-zinc-700">
-                  {viewingMatch.tossWinner.name} won the toss and elected to {viewingMatch.tossDecision} first.
-                </p>
-              </div>
-              {viewingMatch.status !== "Upcoming" && (
-                <div className="col-span-2 border-t border-zinc-150 pt-4">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">Innings Scorecard Summary</span>
-                  <div className="flex items-center justify-between bg-zinc-50 border border-zinc-200 rounded-xl p-4 font-mono text-base font-bold text-zinc-900 shadow-xs">
-                    <span className="flex items-center gap-1.5">
-                      <TeamLogo logo={viewingMatch.battingTeam?.logo} name={viewingMatch.battingTeam?.name} size="sm" />
-                      <span>{viewingMatch.battingTeam?.name}</span>
-                    </span>
-                    <span>
-                      {viewingMatch.score}/{viewingMatch.wickets} ({Math.floor(viewingMatch.legalBalls / 6)}.{viewingMatch.legalBalls % 6} ov)
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </Modal>
 
       {/* Confirmation Modal */}

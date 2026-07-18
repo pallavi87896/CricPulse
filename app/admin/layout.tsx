@@ -30,14 +30,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             
             {/* App Breadcrumb */}
             <div className="flex items-center text-sm font-semibold text-zinc-900 gap-1.5">
-              <span className="text-zinc-400 font-normal">Console</span>
-              <span className="text-zinc-300 font-light">/</span>
               <span>Admin Panel</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-sm text-zinc-500 font-semibold">
-            <span>Server: <span className="text-green-600">Active</span></span>
           </div>
         </header>
 

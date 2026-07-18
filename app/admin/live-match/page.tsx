@@ -23,6 +23,7 @@ export default function LiveMatchesPage() {
   const [loading, setLoading] = useState(true);
 
   const [match, setMatch] = useState<MatchType | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [scorecard, setScorecard] = useState<PlayerStatsType[]>([]);
   const [recentBalls, setRecentBalls] = useState<BallEventType[]>([]);
 
@@ -156,10 +157,6 @@ export default function LiveMatchesPage() {
   // Stats
   //prevents crash and find player stats to display on score board
   const getStat = (playerId: string) => {
-    if (!playerId) return {
-      runs: 0, balls: 0, wicketsTaken: 0, legalBallsBowled: 0, runsConceded: 0, isOut: false,
-      wicketType: ""
-    };
     return (
       scorecard.find((ps) => ps.player?._id === playerId) || {
         runs: 0,
@@ -283,6 +280,7 @@ export default function LiveMatchesPage() {
     newStriker?: string;
     newNonStriker?: string;
   }) => {
+    setSubmitting(true);
     try {
       const res = await fetch("/api/ballEvent", {
         method: "POST",
@@ -306,6 +304,8 @@ export default function LiveMatchesPage() {
       await fetchLiveMatches(selectedMatchId);
     } catch (err) {
       console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -322,21 +322,27 @@ export default function LiveMatchesPage() {
 
   //for wide we are already taking a plus one
 
-  const handleScoreExtra = async (type: "Wide" | "NoBall" | "Bye" | "LegBye", runs: number = 1) => {
-    if (!match) return;
-    const isWideOrNoBall = type === "Wide" || type === "NoBall";
-    await postBallEvent({
-      match: match._id,
-      ballType: type,
-      batsmanRuns: 0,
-      wicket: false,
-      extraRuns: isWideOrNoBall ? runs - 1 : runs
-    });
-  };
+  // const handleScoreExtra = async (type: "Wide" | "NoBall" | "Bye" | "LegBye", runs: number = 1) => {
+  //   if (!match) return;
+  //   const isWideOrNoBall = type === "Wide" || type === "NoBall";
+  //   await postBallEvent({
+  //     match: match._id,
+  //     ballType: type,
+  //     batsmanRuns: 0,
+  //     wicket: false,
+  //     extraRuns: isWideOrNoBall ? runs - 1 : runs
+  //   });
+  // };
 
   const handleOpenExtra = (type: "Wide" | "NoBall" | "Bye" | "LegBye") => {
     setExtraType(type);
+
+    //only in no ball case
     setExtraBatsmanRuns(0);
+
+    // Bye/Leg Bye require at least one run taken.
+    // Wide/No Ball already receive the mandatory +1 in the backend.
+
     setExtraExtraRuns(type === "Bye" || type === "LegBye" ? 1 : 0);
     setIsExtraModalOpen(true);
   };
@@ -373,10 +379,10 @@ export default function LiveMatchesPage() {
     setIsWicketModalOpen(true);
   };
 
-  const handleSaveWicket = (e: React.FormEvent) => {
+  const handleSaveWicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!match) return;
-    postBallEvent({
+    await postBallEvent({
       match: match._id,
       ballType: "Normal",
       batsmanRuns: 0,
@@ -615,6 +621,28 @@ export default function LiveMatchesPage() {
     await fetchLiveMatches(selectedMatchId);
   };
 
+  const handleUndo = async (matchId: string) => {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/undo/${matchId}`, {
+        method: "POST"
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.msg);
+        return;
+      }
+      await fetchLiveMatches(matchId);
+    } catch (err) {
+      console.error(err);
+      alert("something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Get ball string representation (e.g. "4", "W", "Wd")
   const getBallText = (ball: any) => {
     if (ball.wicket) return "W";
@@ -627,12 +655,8 @@ export default function LiveMatchesPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
-        <PageHeader title="Live Match Scoring" description="Manage active matches and score live deliveries." />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Loader variant="card" className="lg:col-span-2" />
-          <Loader variant="card" />
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader size="lg" />
       </div>
     );
   }
@@ -649,30 +673,9 @@ export default function LiveMatchesPage() {
             </svg>
             <h3 className="text-lg font-semibold text-zinc-900">No active live matches found</h3>
             <p className="mt-1 text-sm text-zinc-500 max-w-md">
-              Create a match and set its status to "Live" on the Matches page, or select an upcoming match below to set it Live.
+              Create a match and set its status to "Live" on the Matches page.
             </p>
 
-            {upcomingMatches.length > 0 && (
-              <div className="mt-6 w-full max-w-xs flex flex-col gap-3">
-                <Select
-                  label="Select Upcoming Match to Start"
-                  options={[
-                    { value: "", label: "-- Choose Match --" },
-                    ...upcomingMatches.map((m) => ({
-                      value: m._id,
-                      label: `${m.teamA.name} vs ${m.teamB.name}`,
-                    })),
-                  ]}
-                  value={selectedMatchId}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    if (id) {
-                      setSelectedMatchId(id);
-                    }
-                  }}
-                />
-              </div>
-            )}
           </div>
         </Card>
       </div>
@@ -821,7 +824,7 @@ export default function LiveMatchesPage() {
             <Card className="bg-white border-l-4 border-l-zinc-400">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-[9px] font-bold text-zinc-550 uppercase tracking-wider">Bowler ⚾</span>
+                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Bowler ⚾</span>
                   <h4 className="text-sm font-bold text-zinc-900 mt-0.5">{match.currBowler?.name ?? "Not Selected"}</h4>
                 </div>
                 {isInitialized && (
@@ -831,7 +834,7 @@ export default function LiveMatchesPage() {
                     className="text-zinc-400 hover:text-brand-accent cursor-pointer p-1 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
                   </button>
                 )}
@@ -911,6 +914,7 @@ export default function LiveMatchesPage() {
                           variant={run === 4 || run === 6 ? "primary" : "secondary"}
                           className="py-3 font-mono font-bold text-base"
                           onClick={() => handleScoreRuns(run)}
+                          disabled={submitting}
                         >
                           {run}
                         </Button>
@@ -922,16 +926,16 @@ export default function LiveMatchesPage() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2 block">Extras</span>
                     <div className="grid grid-cols-4 gap-2">
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("Wide")}>
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("Wide")} disabled={submitting}>
                         Wide
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("NoBall")}>
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("NoBall")} disabled={submitting}>
                         No Ball
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("Bye")}>
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("Bye")} disabled={submitting}>
                         Bye
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("LegBye")}>
+                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700 shadow-sm" onClick={() => handleOpenExtra("LegBye")} disabled={submitting}>
                         Leg Bye
                       </Button>
                     </div>
@@ -941,24 +945,22 @@ export default function LiveMatchesPage() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2 block">Wicket & State Controls</span>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <Button variant="danger" className="py-2.5 font-bold text-xs" onClick={handleOpenWicket}>
+                      <Button variant="danger" className="py-2.5 font-bold text-xs" onClick={handleOpenWicket} disabled={submitting}>
                         Wicket 🔴
                       </Button>
-                      <Button variant="secondary" className="py-2.5 font-semibold text-xs text-zinc-700" onClick={handleOpenBowlerChange}>
-                        Change Bowler
+                      <Button 
+                        variant="secondary" 
+                        className="py-2.5 font-bold text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200" 
+                        onClick={() => handleUndo(match._id)} 
+                        disabled={submitting}
+                      >
+                        Undo Last Ball
                       </Button>
                     </div>
                   </div>
 
                   {/* Innings and Match End states */}
-                  <div className="border-t border-zinc-150 pt-3 flex items-center justify-between gap-3">
-                    <Button variant="secondary" size="sm" className="w-1/2 text-xs text-zinc-700" onClick={handleOpenInningsBreak}>
-                      End Innings Break
-                    </Button>
-                    <Button variant="secondary" size="sm" className="w-1/2 text-xs text-red-650 hover:bg-red-50" onClick={handleOpenEndMatch}>
-                      End Match (Declare Winner)
-                    </Button>
-                  </div>
+                  
                 </div>
               )}
             </Card>
@@ -968,47 +970,7 @@ export default function LiveMatchesPage() {
         {/* Right Column - Side Panel (Recent Balls, Comments, Scorecard Preview) */}
         <div className="flex flex-col gap-5">
           {/* 1. Recent Balls & Over History */}
-          <Card title="Current Over History" subtitle="Outcome of recent deliveries">
-            <div className="flex items-center gap-2 mb-3">
-              {recentBallsList.length === 0 ? (
-                <span className="text-xs text-zinc-400 italic">No balls bowled in this over yet.</span>
-              ) : (
-                recentBallsList.map((ball, idx) => {
-                  const val = getBallText(ball);
-                  let bg = "bg-zinc-100 text-zinc-800 border-zinc-200";
-                  if (val === "W") bg = "bg-red-100 text-red-700 border-red-200 font-bold";
-                  else if (val === "4" || val === "6") bg = "bg-brand-secondary text-brand-accent border-brand-primary/45 font-bold";
-
-                  return (
-                    <span
-                      key={idx}
-                      className={`h-8 w-8 rounded-full border flex items-center justify-center text-xs font-semibold ${bg}`}
-                    >
-                      {val}
-                    </span>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Over log list */}
-            <div className="mt-4 border-t border-zinc-150 pt-3 flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Over Summaries</span>
-              {oversHistory.length === 0 ? (
-                <p className="text-xs text-zinc-400 italic">No overs completed yet.</p>
-              ) : (
-                oversHistory.slice(-4).reverse().map((ov, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-xs text-zinc-650">
-                    <span>Over {ov.number}</span>
-                    <span className="font-semibold text-zinc-800">
-                      {ov.runs} runs, {ov.wickets} wickets
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
-
+         
           <Card
             title="Scorecard Preview"
             subtitle="Batsman and bowler card records"
@@ -1018,7 +980,7 @@ export default function LiveMatchesPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedInnings(1)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${selectedInnings === 1 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${selectedInnings === 1 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-500 hover:text-zinc-800"
                       }`}
                   >
                     Inn 1
@@ -1026,7 +988,7 @@ export default function LiveMatchesPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedInnings(2)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${selectedInnings === 2 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-550 hover:text-zinc-800"
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${selectedInnings === 2 ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-500 hover:text-zinc-800"
                       }`}
                   >
                     Inn 2
@@ -1039,7 +1001,7 @@ export default function LiveMatchesPage() {
               {/* Batting Card */}
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-550">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     Batting Scorecard
                   </span>
                   <span className="text-[10px] font-bold text-zinc-500">
@@ -1050,7 +1012,7 @@ export default function LiveMatchesPage() {
                   </span>
                 </div>
                 <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
-                  <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-1.5 flex justify-between font-semibold text-zinc-550">
+                  <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-1.5 flex justify-between font-semibold text-zinc-500">
                     <span>Batsman</span>
                     <div className="flex gap-4 font-mono">
                       <span className="w-8 text-right">R</span>
@@ -1087,9 +1049,9 @@ export default function LiveMatchesPage() {
 
               {/* Bowling Card */}
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 block mb-1.5">Bowling Scorecard</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-1.5">Bowling Scorecard</span>
                 <div className="border border-zinc-200 rounded-md overflow-hidden bg-white text-xs">
-                  <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-1.5 flex justify-between font-semibold text-zinc-550">
+                  <div className="bg-zinc-50 border-b border-zinc-200 px-3 py-1.5 flex justify-between font-semibold text-zinc-500">
                     <span>Bowler</span>
                     <div className="flex gap-4 font-mono">
                       <span className="w-8 text-right">O</span>
@@ -1110,8 +1072,8 @@ export default function LiveMatchesPage() {
                         <div key={p._id} className={`px-3 py-1.5 flex justify-between items-center ${isBowler ? "bg-brand-secondary/20" : ""}`}>
                           <span className="font-semibold text-zinc-700">{p.name}</span>
                           <div className="flex gap-4 font-mono text-zinc-900">
-                            <span className="w-8 text-right text-zinc-550">{ovs}</span>
-                            <span className="w-8 text-right text-zinc-550">{stats.runsConceded}</span>
+                            <span className="w-8 text-right text-zinc-500">{ovs}</span>
+                            <span className="w-8 text-right text-zinc-500">{stats.runsConceded}</span>
                             <span className="w-8 text-right font-bold">{stats.wicketsTaken}</span>
                           </div>
                         </div>
@@ -1157,7 +1119,7 @@ export default function LiveMatchesPage() {
       </div>
 
       {/* Wicket Modal */}
-      <Modal isOpen={isWicketModalOpen} onClose={() => setIsWicketModalOpen(false)} title="Register Wicket Out" footer={<><Button variant="secondary" onClick={() => setIsWicketModalOpen(false)}>Cancel</Button><Button variant="danger" type="submit" form="wicket-form">Register Out</Button></>}>
+      <Modal isOpen={isWicketModalOpen} onClose={() => !submitting && setIsWicketModalOpen(false)} title="Register Wicket Out" footer={<><Button variant="secondary" onClick={() => setIsWicketModalOpen(false)} disabled={submitting}>Cancel</Button><Button variant="danger" type="submit" form="wicket-form" isLoading={submitting}>Register Out</Button></>}>
         <form id="wicket-form" onSubmit={handleSaveWicket} className="flex flex-col gap-4">
           <Select
             label="Wicket Dismissal Type"
@@ -1267,7 +1229,7 @@ export default function LiveMatchesPage() {
       {/* Innings Break Setup Modal */}
       <Modal isOpen={isInningsModalOpen} onClose={() => setIsInningsModalOpen(false)} title="Start New Innings Break Setup" footer={<><Button variant="secondary" onClick={() => setIsInningsModalOpen(false)}>Cancel</Button><Button variant="primary" type="submit" form="innings-form">Start Innings</Button></>}>
         <form id="innings-form" onSubmit={handleSaveInningsBreak} className="flex flex-col gap-4">
-          <p className="text-xs text-zinc-550 border border-zinc-200 p-2.5 rounded-md bg-zinc-50 leading-relaxed font-semibold">
+          <p className="text-xs text-zinc-500 border border-zinc-200 p-2.5 rounded-md bg-zinc-50 leading-relaxed font-semibold">
             Innings swap toggles batting and bowling teams. The opponent batting squad will now bat. Choose the opening batsman pair and the first bowler.
           </p>
 
@@ -1310,12 +1272,12 @@ export default function LiveMatchesPage() {
       {/* Extras Modal */}
       <Modal
         isOpen={isExtraModalOpen}
-        onClose={() => setIsExtraModalOpen(false)}
+        onClose={() => !submitting && setIsExtraModalOpen(false)}
         title={`Score Extra: ${extraType === "NoBall" ? "No Ball" : extraType === "LegBye" ? "Leg Bye" : extraType}`}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setIsExtraModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit" form="extra-form">Score Extra Ball</Button>
+            <Button variant="secondary" onClick={() => setIsExtraModalOpen(false)} disabled={submitting}>Cancel</Button>
+            <Button variant="primary" type="submit" form="extra-form" isLoading={submitting}>Score Extra Ball</Button>
           </>
         }
       >
@@ -1323,7 +1285,7 @@ export default function LiveMatchesPage() {
           {extraType === "NoBall" && (
             <div className="flex flex-col gap-4">
               <div>
-                <span className="text-xs font-bold text-zinc-550 block mb-2">Runs Off Bat (Credited to Batsman)</span>
+                <span className="text-xs font-bold text-zinc-500 block mb-2">Runs Off Bat (Credited to Batsman)</span>
                 <div className="grid grid-cols-6 gap-2">
                   {[0, 1, 2, 3, 4, 6].map((run) => (
                     <button
@@ -1332,7 +1294,7 @@ export default function LiveMatchesPage() {
                       onClick={() => setExtraBatsmanRuns(run)}
                       className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraBatsmanRuns === run
                           ? "bg-brand-accent text-white border-brand-accent"
-                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
                         }`}
                     >
                       {run}
@@ -1342,7 +1304,7 @@ export default function LiveMatchesPage() {
               </div>
 
               <div>
-                <span className="text-xs font-bold text-zinc-550 block mb-2">Additional Extra Runs (Byes/Leg-byes on No Ball)</span>
+                <span className="text-xs font-bold text-zinc-500 block mb-2">Additional Extra Runs (Byes/Leg-byes on No Ball)</span>
                 <div className="grid grid-cols-5 gap-2">
                   {[0, 1, 2, 3, 4].map((run) => (
                     <button
@@ -1351,7 +1313,7 @@ export default function LiveMatchesPage() {
                       onClick={() => setExtraExtraRuns(run)}
                       className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraExtraRuns === run
                           ? "bg-brand-accent text-white border-brand-accent"
-                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
                         }`}
                     >
                       {run}
@@ -1364,7 +1326,7 @@ export default function LiveMatchesPage() {
 
           {extraType === "Wide" && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-zinc-550 block mb-2">Additional Runs Ran/Boundary (Excluding +1 wide penalty)</span>
+              <span className="text-xs font-bold text-zinc-500 block mb-2">Additional Runs Ran/Boundary (Excluding +1 wide penalty)</span>
               <div className="grid grid-cols-5 gap-2">
                 {[0, 1, 2, 3, 4].map((run) => (
                   <button
@@ -1373,7 +1335,7 @@ export default function LiveMatchesPage() {
                     onClick={() => setExtraExtraRuns(run)}
                     className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraExtraRuns === run
                         ? "bg-brand-accent text-white border-brand-accent"
-                        : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                        : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
                       }`}
                   >
                     {run}
@@ -1388,7 +1350,7 @@ export default function LiveMatchesPage() {
 
           {(extraType === "Bye" || extraType === "LegBye") && (
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-zinc-550 block mb-2">Runs Scored</span>
+              <span className="text-xs font-bold text-zinc-500 block mb-2">Runs Scored</span>
               <div className="grid grid-cols-4 gap-2">
                 {[1, 2, 3, 4].map((run) => (
                   <button
@@ -1397,7 +1359,7 @@ export default function LiveMatchesPage() {
                     onClick={() => setExtraExtraRuns(run)}
                     className={`py-2 rounded-lg font-mono font-bold text-sm border transition-all cursor-pointer ${extraExtraRuns === run
                         ? "bg-brand-accent text-white border-brand-accent"
-                        : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50"
+                        : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
                       }`}
                   >
                     {run}

@@ -22,7 +22,7 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div className={`bg-white border border-zinc-200 rounded-lg shadow-xs overflow-hidden ${className}`}>
       {(title || subtitle || extra) && (
-        <div className={`px-5 py-4 border-b border-zinc-150 flex items-center justify-between bg-zinc-50 ${headerClassName}`}>
+        <div className={`px-5 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50 ${headerClassName}`}>
           <div>
             {title && <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>}
             {subtitle && <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>}

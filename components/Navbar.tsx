@@ -57,11 +57,6 @@ export default function Navbar() {
 
           {/* Right Action Elements */}
           <div className="hidden sm:flex sm:items-center gap-4">
-            {/* Live Indicator Status */}
-            <div className="flex items-center gap-1 bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-100">
-              <span className="w-1.5 h-1.5 bg-red-500 rounded-full inline-block"></span>
-              Live Engine Active
-            </div>
 
             {/* Admin Login Button */}
             <Link href="/admin/login">

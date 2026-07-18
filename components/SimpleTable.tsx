@@ -18,7 +18,7 @@ export const SimpleTable: React.FC<SimpleTableProps> = ({
 }) => {
   return (
     <div className="w-full overflow-x-auto border border-zinc-200 rounded-lg shadow-xs bg-white">
-      <table className="min-w-full divide-y divide-zinc-250">
+      <table className="min-w-full divide-y divide-zinc-200">
         <thead className="bg-zinc-50">
           <tr>
             {headers.map((header, idx) => (

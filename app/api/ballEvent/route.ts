@@ -137,6 +137,7 @@ export async function  POST(req:NextRequest){
             {
                 striker:striker,
                 bowler:bowler,
+                nonStriker,
                 match:existingMatch._id,
                 ballType, 
                 batsmanRuns, 

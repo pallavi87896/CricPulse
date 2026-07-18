@@ -59,10 +59,10 @@ export default function AdminLoginPage() {
             </span>
           </Link>
           <h2 className="text-2xl font-extrabold tracking-tight text-white">
-            Score Admin Terminal
+           Admin Panel
           </h2>
           <p className="text-xs text-zinc-400 font-medium max-w-xs leading-relaxed">
-            Please enter your management credentials to access live scoring dashboards and team registries.
+            Please enter your credentials to access live scoring dashboard.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
                 disabled={loading}
                 className="w-full justify-center font-bold text-xs py-3 rounded-xl shadow-lg shadow-[var(--color-brand-primary)]/10"
               >
-                {loading ? "Decrypting Platform Keys..." : "Verify & Access Panel"}
+                {loading ? "Logging in" : "Verify & Access Panel"}
               </Button>
             </div>
           </form>
@@ -129,7 +129,7 @@ export default function AdminLoginPage() {
         {/* Dynamic Return Navigation Footprint */}
         <div className="text-center pt-2">
           <Link href="/" className="inline-flex items-center text-xs text-zinc-500 hover:text-zinc-300 font-semibold transition-colors gap-1">
-            ← Cancel and return to Live score feed
+             Cancel and Return to Dashboard
           </Link>
         </div>
       </div>

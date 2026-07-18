@@ -47,7 +47,7 @@ export const logoPresets: Record<LogoPreset, { name: string; icon: React.ReactNo
     name: "Iron Helmet",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-        <path d="M12 2C6.48 2 2 6.48 2 12c0 2.24.74 4.3 2 5.97V22h4v-3h8v3h4v-4.03c1.26-1.67 2-3.73 2-5.97 0-5.52-4.48-10-10-10z" className="text-zinc-650 fill-zinc-700/20" />
+        <path d="M12 2C6.48 2 2 6.48 2 12c0 2.24.74 4.3 2 5.97V22h4v-3h8v3h4v-4.03c1.26-1.67 2-3.73 2-5.97 0-5.52-4.48-10-10-10z" className="text-zinc-600 fill-zinc-700/20" />
         <path d="M6 14h12" className="text-zinc-400" />
         <path d="M7 16h10" className="text-zinc-400" />
         <path d="M9 18h6" className="text-zinc-400" />
@@ -97,7 +97,7 @@ export const logoPresets: Record<LogoPreset, { name: string; icon: React.ReactNo
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
         <rect x="5" y="8" width="6" height="12" rx="1.5" className="text-zinc-400 fill-zinc-200" />
         <rect x="13" y="8" width="6" height="12" rx="1.5" className="text-zinc-400 fill-zinc-200" />
-        <path d="M5 12h6M13 12h6M5 16h6M13 16h6" className="text-zinc-350" />
+        <path d="M5 12h6M13 12h6M5 16h6M13 16h6" className="text-zinc-300" />
         <circle cx="8" cy="5" r="1" className="text-[var(--color-brand-accent)] fill-[var(--color-brand-accent)]" />
         <circle cx="16" cy="5" r="1" className="text-[var(--color-brand-accent)] fill-[var(--color-brand-accent)]" />
       </svg>
@@ -126,6 +126,13 @@ export const TeamLogo: React.FC<TeamLogoProps> = ({
     lg: "w-16 h-16 text-2xl",
     xl: "w-24 h-24 text-4xl",
   };
+
+  const isUrl = logo && (
+    logo.includes(".") ||
+    logo.startsWith("/") ||
+    logo.startsWith("http://") ||
+    logo.startsWith("https://")
+  );
 
   const isPreset = (key: string): key is LogoPreset => {
     return key in logoPresets;
@@ -158,19 +165,21 @@ export const TeamLogo: React.FC<TeamLogoProps> = ({
       trimmedLogo.startsWith("http://") ||
       trimmedLogo.startsWith("https://")
     ) {
-      const srcPath = trimmedLogo.startsWith("http") || trimmedLogo.startsWith("/") ? trimmedLogo : `/${trimmedLogo}`;
+      const lowerLogo = trimmedLogo.toLowerCase();
+      const srcPath = lowerLogo.startsWith("http") || lowerLogo.startsWith("/") ? trimmedLogo : `/${trimmedLogo}`;
       return (
         <img
           src={srcPath}
           alt={`${name} Logo`}
           className="w-full h-full object-contain rounded-full"
           onError={(e) => {
+            console.error("CricPulse Logo Error: Failed to load image from src:", srcPath);
             // Fallback if image fails to load
             e.currentTarget.style.display = "none";
             const parent = e.currentTarget.parentElement;
             if (parent) {
               parent.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-zinc-350">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-zinc-300">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" class="fill-zinc-100 text-zinc-300" />
                 </svg>
               `;
@@ -194,7 +203,7 @@ export const TeamLogo: React.FC<TeamLogoProps> = ({
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center shrink-0 rounded-xl bg-zinc-50 border border-zinc-200/80 p-2 shadow-xs transition-transform hover:scale-102 ${sizeClasses[size]} ${className}`}
+      className={`relative inline-flex items-center justify-center shrink-0 rounded-xl bg-zinc-50 border border-zinc-200/80 ${isUrl ? "p-0 overflow-hidden" : "p-2"} shadow-xs transition-transform hover:scale-102 ${sizeClasses[size]} ${className}`}
     >
       {renderLogoContent()}
     </div>

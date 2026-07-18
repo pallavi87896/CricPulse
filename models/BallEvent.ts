@@ -13,6 +13,12 @@ const BallEventSchema=new mongoose.Schema({
         required:true
     },
 
+    nonStriker:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref:"Player",
+      required:true
+    },
+    
     bowler:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Player",

@@ -229,7 +229,7 @@ export default function PlayersPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Players Registry"
-        description="Configure roles, skill profiles, and team affiliations for your league's player database."
+        description="Configure roles, profiles, and team affiliations of the players."
         actions={
           <Button
             variant="primary"
@@ -253,7 +253,7 @@ export default function PlayersPage() {
       {/* Search Bar */}
       {teams.length > 0 && !loading && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-zinc-200 shadow-xs">
-          <div className="relative w-full sm:w-72">
+          <div className="relative w-full">
             <input
               type="text"
               placeholder="Search players..."
@@ -272,16 +272,14 @@ export default function PlayersPage() {
             </svg>
           </div>
 
-          <div className="text-xs text-zinc-500 font-medium">
-            Showing {filteredPlayers.length} of {players.length} registered players
-          </div>
+        
         </div>
       )}
 
       {loading ? (
         <Loader variant="table" />
       ) : teams.length === 0 ? (
-        <div className="text-center p-12 border border-dashed border-zinc-250 rounded-2xl bg-zinc-50/50">
+        <div className="text-center p-12 border border-dashed border-zinc-200 rounded-2xl bg-zinc-50/50">
           <svg
             className="w-12 h-12 mx-auto text-zinc-300 mb-4"
             fill="none"
@@ -302,7 +300,7 @@ export default function PlayersPage() {
         </div>
       ) : (
         <SimpleTable
-          headers={["Player Name", "Skill Role", "Club Affiliation", "Actions"]}
+          headers={["Player", "Role", "Club ", "Actions"]}
           isEmpty={filteredPlayers.length === 0}
         >
           {filteredPlayers.map((player) => (
@@ -310,7 +308,7 @@ export default function PlayersPage() {
               <td className="px-6 py-4 whitespace-nowrap font-semibold text-zinc-950">
                 {player.name}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-zinc-550 font-bold text-xs uppercase tracking-wider">
+              <td className="px-6 py-4 whitespace-nowrap text-zinc-500 font-bold text-xs uppercase tracking-wider">
                 {player.role || "All-Rounder"}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-zinc-900">

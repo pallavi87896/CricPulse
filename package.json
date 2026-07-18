@@ -12,6 +12,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "express": "^5.2.1",
+    "imagekit": "^6.0.0",
     "jose": "^6.2.3",
     "mongodb": "^7.4.0",
     "mongoose": "^9.7.3",
